@@ -3,1051 +3,495 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExamBrowser AI - Pro System</title>
-    
-    <!-- FAVICON -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    <title>EduAdmin - Guru Bahasa Inggris</title>
+    <!-- Favicon -->
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3429/3429149.png" type="image/png">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Font Awesome -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- PDF.js & Mammoth.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .no-select { user-select: none; -webkit-user-select: none; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; overflow-x: hidden; } /* Prevent global scroll */
         
-        /* Exam Navigation */
-        .question-nav-btn {
-            width: 40px; height: 40px; 
-            border: 1px solid #cbd5e1; 
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; border-radius: 8px; font-weight: bold;
-            transition: all 0.2s;
-            background-color: white;
-            color: #334155;
-        }
-        .question-nav-btn:hover { transform: scale(1.05); border-color: #3b82f6; }
-        .question-nav-btn.active { background-color: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.5); z-index: 10; }
-        .question-nav-btn.answered { background-color: #10b981; color: white; border-color: #10b981; }
-        .question-nav-btn.doubt { background-color: #f59e0b; color: white; border-color: #f59e0b; }
-        
-        /* Drawers */
-        .mobile-drawer {
-            position: fixed; top: 0; bottom: 0; width: 280px;
-            background: white; z-index: 50; transition: transform 0.3s ease-in-out;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-        .admin-drawer { left: 0; transform: translateX(-100%); background: #0f172a; color: white; }
-        .admin-drawer.open { transform: translateX(0); }
-        .student-drawer { right: 0; transform: translateX(100%); }
-        .student-drawer.open { transform: translateX(0); }
-        .drawer-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
-        }
-        .drawer-overlay.show { opacity: 1; pointer-events: auto; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1e1e2d; }
+        ::-webkit-scrollbar-thumb { background: #d4f049; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b1cc30; }
 
-        /* UI Components */
-        .stat-card { background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.2s; }
-        .stat-card:hover { transform: translateY(-2px); }
-        .option-card.selected { background-color: #dbeafe; border-color: #3b82f6; ring: 1px solid #3b82f6; }
-        .option-card.selected .opt-char { background-color: #2563eb; color: white; }
+        /* Sidebar Navigation Styles */
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item:not(.active):hover { background-color: #374151; color: white; }
+        .nav-item.active { background-color: #d4f049; color: #1e1e2d; font-weight: 700; box-shadow: 0 4px 15px rgba(212, 240, 73, 0.3); }
+        .nav-item.active:hover { background-color: #cbe63d; color: #1e1e2d; }
+        .nav-item.active i { color: #1e1e2d; }
+        
+        /* Loading Overlay */
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #1e1e2d; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
+        .pulse-logo { font-size: 3rem; color: #d4f049; animation: pulse-glow 1.5s infinite; }
+        @keyframes pulse-glow { 0% { transform: scale(1); text-shadow: 0 0 10px rgba(212,240,73,0.5); } 50% { transform: scale(1.1); text-shadow: 0 0 30px rgba(212,240,73,0.8); } 100% { transform: scale(1); text-shadow: 0 0 10px rgba(212,240,73,0.5); } }
 
-        /* Matching */
-        .match-item { position: relative; cursor: pointer; transition: all 0.2s; }
-        .match-item:hover { background-color: #f1f5f9; }
-        .match-item.selected { border-color: #3b82f6; background-color: #eff6ff; }
-        .match-point { width: 12px; height: 12px; background: #94a3b8; border-radius: 50%; position: absolute; top: 50%; transform: translateY(-50%); }
-        .match-point.active { background: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.2); }
-        .left-item .match-point { right: -6px; }
-        .right-item .match-point { left: -6px; }
-        svg line { stroke: #2563eb; stroke-width: 2; stroke-linecap: round; pointer-events: auto; cursor: pointer; }
-        svg line:hover { stroke: #ef4444; stroke-width: 4; }
-        
-        /* Modern Input & Select */
-        .modern-input-group { position: relative; margin-bottom: 1rem; }
-        .modern-input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; }
-        .modern-input { width: 100%; padding: 0.75rem 1rem 0.75rem 3rem; border: 2px solid #e5e7eb; border-radius: 12px; transition: all 0.3s; background: #f9fafb; font-size: 0.95rem; }
-        .modern-input:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); outline: none; }
-        
-        /* Custom Select Arrow */
-        .modern-select-wrapper { position: relative; }
-        .modern-select-wrapper::after { content: '\f107'; font-family: 'Font Awesome 5 Free'; font-weight: 900; position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: #6b7280; pointer-events: none; }
-        .modern-select { appearance: none; -webkit-appearance: none; cursor: pointer; }
+        /* Modal Animation */
+        .modal-enter-active, .modal-leave-active { transition: all 0.3s ease; }
+        .modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.95); }
 
-        /* Token Monitor Circular Progress */
-        .progress-ring__circle { transition: stroke-dashoffset 1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        /* Vocab Boxes */
+        .vocab-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+        .vocab-box { aspect-ratio: 1; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; border-radius: 6px; transition: all 0.1s; font-weight: bold; color: #666; background: white; }
+        .vocab-box.status-bl { background-color: #facc15; border-color: #eab308; color: #422006; }
+        .vocab-box.status-l { background-color: #d4f049; border-color: #bad336; color: #1e1e2d; }
+
+        /* Progress Circle */
+        .progress-circle { width: 32px; height: 32px; border-radius: 50%; background: conic-gradient(#d4f049 calc(var(--percent) * 1%), #333 0); display: flex; align-items: center; justify-content: center; position: relative; }
+        .progress-circle::before { content: ''; position: absolute; width: 26px; height: 26px; background: #1f2937; border-radius: 50%; }
+        .progress-content { position: relative; z-index: 1; font-size: 9px; color: #d4f049; font-weight: bold; }
+
+        .sidebar-mobile { transition: transform 0.3s ease-in-out; }
+        .stats-card-absensi { transition: transform 0.2s; }
+        .stats-card-absensi:hover { transform: translateY(-3px); }
         
-        /* Mobile Editor Sticky Footer */
-        .mobile-editor-footer {
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            background: white; padding: 12px 15px; 
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.1); 
-            z-index: 50; display: none;
-            gap: 10px; border-top: 1px solid #e2e8f0;
-        }
-        @media (max-width: 1024px) {
-            .mobile-editor-footer { display: flex; }
-            .desktop-editor-actions { display: none; }
-            #editor-content-wrapper { padding-bottom: 80px; } /* Spacing for footer */
-            /* Hide desktop specific items on mobile if needed */
+        /* Mobile Specific Tweaks - EXTENSIVE FIXES */
+        @media (max-width: 768px) {
+            /* Container padding fix */
+            .page-content-mobile { padding: 0.75rem; font-size: 0.8rem; }
+            
+            /* Header Title Multi-line Support */
+            .header-title-box {
+                max-width: 180px; /* Limit width */
+                line-height: 1.1; /* Tight spacing */
+            }
+            .header-title-mobile { 
+                font-size: 1rem; /* Smaller font */
+                white-space: normal; /* Allow wrapping */
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 2; /* Max 2 lines */
+                -webkit-box-orient: vertical;
+            }
+
+            /* Table Compacting */
+            .table-mobile th, .table-mobile td { 
+                padding: 0.25rem 0.4rem !important; /* Ultra tight padding */
+                font-size: 0.7rem !important; /* Tiny font */
+            }
+            /* Specific column width adjustments for mobile */
+            .table-mobile td.col-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            
+            /* Buttons in Tables */
+            .btn-icon-mobile { width: 24px !important; height: 24px !important; font-size: 9px !important; }
+            .btn-vocab-mobile { padding: 2px 6px !important; font-size: 0.65rem !important; }
+            
+            /* Schedule Menu Grid for Mobile */
+            .schedule-menu-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.25rem;
+                justify-content: flex-end;
+                max-width: 200px; /* Limit width to force wrapping if needed */
+            }
+            .schedule-btn {
+                padding: 0.2rem 0.5rem;
+                font-size: 0.65rem;
+                flex-grow: 1;
+                text-align: center;
+            }
+
+            /* General Button sizing */
+            .btn-mobile { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+            .card-title-mobile { font-size: 1rem; }
+            
+            /* Ensure tables scroll internally, not full page */
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 h-screen overflow-hidden">
+<body>
 
-    <div id="app" class="h-full w-full relative"></div>
+<div id="app" class="flex h-screen overflow-hidden relative" @click="handleGlobalClick">
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc, onSnapshot, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <!-- LOADING -->
+    <div v-if="loading" class="loading-overlay">
+        <i class="fa-solid fa-graduation-cap pulse-logo mb-4"></i>
+        <p class="text-white text-sm tracking-widest uppercase font-semibold">Memuat Data...</p>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyD4wcRZjMQTO3NQjwHPuHGv0E5_Qx8Razk",
-            authDomain: "exambro-bb56d.firebaseapp.com",
-            projectId: "exambro-bb56d",
-            storageBucket: "exambro-bb56d.firebasestorage.app",
-            messagingSenderId: "979885745832",
-            appId: "1:979885745832:web:72d46f3b224c19b102449d",
-            measurementId: "G-5FMPPDKF2Q"
-        };
-        
-        const GEMINI_API_KEY = "AIzaSyCa5s5Iz1JPUfComcSujXdGdvKEFIB4s1s";
+    <!-- MODALS (Same as before) -->
+    <transition name="modal"><div v-if="showRenameColumnModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4"><div class="bg-white w-full max-w-sm p-6 rounded-3xl shadow-2xl transform transition-all"><div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4"><div class="w-10 h-10 rounded-full bg-[#1e1e2d] flex items-center justify-center text-[#d4f049]"><i class="fa-solid fa-pen-to-square"></i></div><div><h3 class="font-bold text-xl text-gray-800">Ubah Nama Kolom</h3><p class="text-xs text-gray-500">Sesuaikan judul tugas/ulangan</p></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Nama Baru</label><input v-model="editingColumn.name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:outline-none focus:border-[#d4f049] focus:bg-white transition" @keyup.enter="saveColumnRename"></div></div><div class="flex justify-end gap-3"><button @click="showRenameColumnModal = false" class="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition">Batal</button><button @click="saveColumnRename" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#d4f049] text-[#1e1e2d] hover:bg-[#cbe63d] shadow-lg shadow-lime-200 transition transform hover:scale-105">Simpan</button></div></div></div></transition>
+    <transition name="modal"><div v-if="showEditScheduleModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4"><div class="bg-white w-full max-w-md p-6 rounded-3xl shadow-2xl transform transition-all"><div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4"><div class="w-10 h-10 rounded-full bg-[#1e1e2d] flex items-center justify-center text-[#d4f049]"><i class="fa-solid fa-pen-to-square"></i></div><div><h3 class="font-bold text-xl text-gray-800">Edit Jadwal</h3><p class="text-xs text-gray-500">Perbarui detail mengajar</p></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Materi</label><input v-model="editingScheduleSlot.subject" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:outline-none focus:border-[#d4f049] focus:bg-white transition"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Jam</label><input v-model="editingScheduleSlot.time" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#d4f049] focus:bg-white transition"></div><div><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Kelas</label><input v-model="editingScheduleSlot.class" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#d4f049] focus:bg-white transition"></div></div></div><div class="flex justify-end gap-3"><button @click="showEditScheduleModal = false" class="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition">Batal</button><button @click="saveScheduleEdit" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#d4f049] text-[#1e1e2d] hover:bg-[#cbe63d] shadow-lg shadow-lime-200 transition transform hover:scale-105">Simpan</button></div></div></div></transition>
+    <transition name="modal"><div v-if="modal.show" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm p-4"><div class="bg-[#1e1e2d] w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-gray-600 text-white transform transition-all"><div class="flex items-center gap-3 mb-4"><div :class="['w-10 h-10 rounded-full flex items-center justify-center', modal.type === 'error' ? 'bg-red-500' : 'bg-[#d4f049]']"><i :class="['fa-solid text-lg', modal.type === 'error' ? 'fa-triangle-exclamation text-white' : 'fa-check text-[#1e1e2d]']"></i></div><h3 class="font-bold text-lg">{{ modal.title }}</h3></div><p class="text-gray-300 mb-6 text-sm leading-relaxed">{{ modal.message }}</p><div class="flex justify-end gap-3"><button v-if="modal.isConfirm" @click="closeModal(false)" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-400 hover:bg-gray-700 transition">Batal</button><button @click="closeModal(true)" :class="['px-6 py-2 rounded-lg text-sm font-bold text-[#1e1e2d] transition transform hover:scale-105 shadow-lg', modal.type === 'error' ? 'bg-red-500 text-white' : 'bg-[#d4f049] hover:bg-[#cbe63d]']">{{ modal.confirmText || 'OKE' }}</button></div></div></div></transition>
+    <transition name="modal"><div v-if="showVocabModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4"><div class="bg-white w-full max-w-lg p-6 rounded-3xl shadow-2xl flex flex-col max-h-[90vh]"><div class="flex justify-between items-center mb-2"><div><h3 class="font-bold text-xl text-gray-800">Target 100 Vocabulary</h3><p class="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full inline-block mt-1">{{ selectedVocabStudent.name }}</p></div><button @click="showVocabModal = false" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-500 transition flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button></div><div class="grid grid-cols-3 gap-2 mb-4 text-center"><div class="bg-green-100 p-2 rounded-xl border border-green-200"><p class="text-[10px] text-green-700 font-bold uppercase">Lancar</p><p class="text-xl font-bold text-green-800">{{ getVocabStats(selectedVocabStudent.id).l }}</p></div><div class="bg-yellow-100 p-2 rounded-xl border border-yellow-200"><p class="text-[10px] text-yellow-700 font-bold uppercase">Belum Lancar</p><p class="text-xl font-bold text-yellow-800">{{ getVocabStats(selectedVocabStudent.id).bl }}</p></div><div class="bg-gray-100 p-2 rounded-xl border border-gray-200"><p class="text-[10px] text-gray-500 font-bold uppercase">Belum</p><p class="text-xl font-bold text-gray-600">{{ getVocabStats(selectedVocabStudent.id).t }}</p></div></div><div class="overflow-y-auto flex-1 mb-4 p-1"><div class="vocab-grid"><div v-for="n in 100" :key="n" @click="cycleVocabItem(selectedVocabStudent.id, n)" :class="['vocab-box', getVocabClass(selectedVocabStudent.id, n)]">{{ n }}</div></div></div><div class="pt-2 border-t"><button @click="saveVocabData" class="w-full bg-[#1e1e2d] text-[#d4f049] py-3 rounded-xl text-sm font-bold hover:bg-black transition shadow-lg flex justify-center items-center gap-2"><i class="fa-solid fa-save"></i> Simpan Progress</button></div></div></div></transition>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    <div v-if="mobileMenuOpen" class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" @click="mobileMenuOpen = false"></div>
 
-        const CLASS_MAPPING = {
-            "X.2": "Kelas X", "X.3": "Kelas X", "X.4": "Kelas X",
-            "XI.1": "Kelas XI", "XI.2": "Kelas XI", "XI.3": "Kelas XI", "XI.4": "Kelas XI",
-            "XII MIPA 1": "Kelas XII", "XII MIPA 2": "Kelas XII", "XII IPS 1": "Kelas XII", "XII IPS 2": "Kelas XII"
-        };
-        
-        const ADMIN_LEVELS = ["Kelas X", "Kelas XI", "Kelas XII"];
-
-        let state = {
-            view: 'login',
-            user: null,
-            examData: null,
-            answers: {}, 
-            doubts: {}, 
-            token: "",
-            timerInterval: null,
-            countdownInterval: null,
-            tokenCheckInterval: null, 
-            clockInterval: null,
-            currentQuestionIndex: 0,
-            editorQuestions: [],
-            currentExamId: null,
-            isPreview: false,
-            resultFilter: 'ALL',
-            showStudentNav: false,
-            showAdminNav: false,
-            matchSelection: null,
-            cheatCount: 0,
-            isAlertOpen: false,
-            startTime: null 
-        };
-
-        const $ = (id) => document.getElementById(id);
-
-        // --- ANTI-CHEAT ---
-        window.handleCheat = () => {
-            if (state.view === 'exam' && !state.isPreview) {
-                if(state.isAlertOpen) return;
-                state.cheatCount = (state.cheatCount || 0) + 1;
-                state.isAlertOpen = true;
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'PELANGGARAN TERDETEKSI!',
-                    html: `
-                        <div class="text-center">
-                            <div class="text-6xl mb-4">🚫</div>
-                            <h3 class="text-red-600 font-bold text-xl mb-2">Dilarang Keluar Aplikasi!</h3>
-                            <p class="text-gray-700 mb-4">Aktivitas Anda telah direkam sistem.</p>
-                            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative">
-                                <strong class="font-bold">Total Pelanggaran: ${state.cheatCount}</strong>
-                            </div>
-                        </div>
-                    `,
-                    confirmButtonText: 'KEMBALI MENGERJAKAN',
-                    confirmButtonColor: '#d33',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    backdrop: `rgba(150,0,0,0.95)`,
-                    timer: 5000,
-                    timerProgressBar: true,
-                    didOpen: () => {
-                        Swal.showLoading();
-                        const b = Swal.getConfirmButton();
-                        b.disabled = true;
-                        setTimeout(() => { Swal.hideLoading(); b.disabled = false; }, 2000);
-                    }
-                }).then(() => {
-                    state.isAlertOpen = false;
-                    try { document.documentElement.requestFullscreen().catch(e=>{}); } catch(e){}
-                });
-            }
-        };
-        window.addEventListener('blur', window.handleCheat);
-        document.addEventListener('visibilitychange', () => { if(document.hidden) window.handleCheat(); });
-
-        // --- UTILS ---
-        const generateClassOptions = () => {
-            const groups = { "Kelas X": [], "Kelas XI": [], "Kelas XII": [] };
-            Object.keys(CLASS_MAPPING).forEach(k => { const lvl = CLASS_MAPPING[k]; if(groups[lvl]) groups[lvl].push(k); });
-            return Object.keys(groups).map(lvl => `<optgroup label="${lvl}">${groups[lvl].map(c => `<option value="${c}">${c}</option>`).join('')}</optgroup>`).join('');
-        };
-
-        // Fungsi sanitasi untuk mencegah error saat render input value
-        const escapeHtml = (text) => {
-            if (!text) return "";
-            return text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        };
-
-        async function readPdfText(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let fullText = "";
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const txt = await page.getTextContent();
-                fullText += txt.items.map(item => item.str).join(" ") + "\n";
-            }
-            return fullText; 
-        }
-        async function readDocxHtml(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
-            return result.value; 
-        }
-        const fileToBase64 = (file) => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-
-        async function generateQuestionsAI(text, count, level) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-            const prompt = `Buatlah TEPAT ${count} soal ujian ${level}. Output JSON Array. Struktur: { "type": "PG", "text": "...", "options": ["A","B","C","D","E"], "key": "...", "points": 10, "referenceText": "..." } Materi: ${text.substring(0, 45000)}`;
-            try {
-                const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-                const data = await resp.json();
-                let txt = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
-                const json = JSON.parse(txt);
-                json.forEach(q => { if(q.type === 'PG' && q.options.length < 5) while(q.options.length < 5) q.options.push("Opsi Tambahan"); });
-                return json;
-            } catch (error) { throw new Error("Gagal generate soal."); }
-        }
-
-        function startTokenListener() {
-            onSnapshot(doc(db,"system","token"), (s) => {
-                if(s.exists()) {
-                    const d = s.data();
-                    const tEl = $('adm-token');
-                    if(tEl) {
-                        tEl.innerText = d.code;
-                    }
-                    
-                    // Update Circular Timer
-                    const circle = document.querySelector('.progress-ring__circle');
-                    let circumference = 0;
-                    if(circle) {
-                         const radius = circle.r.baseVal.value;
-                         circumference = radius * 2 * Math.PI;
-                         circle.style.strokeDasharray = `${circumference} ${circumference}`;
-                    }
-
-                    if(state.countdownInterval) clearInterval(state.countdownInterval);
-                    const generatedAt = d.updatedAt ? d.updatedAt.toDate() : new Date();
-                    const TOTAL_TIME = 300; // 5 minutes
-                    
-                    const updateTimer = () => {
-                        const now = new Date();
-                        const elapsedSeconds = Math.floor((now - generatedAt) / 1000);
-                        let timeLeft = TOTAL_TIME - elapsedSeconds;
-                        
-                        if (timeLeft < 0) {
-                            timeLeft = 0; 
-                        }
-
-                        let m = Math.floor(timeLeft / 60);
-                        let s = timeLeft % 60;
-                        
-                        const cEl = $('token-countdown');
-                        if(cEl) cEl.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                        
-                        if(circle) {
-                             const offset = circumference - (timeLeft / TOTAL_TIME) * circumference;
-                             circle.style.strokeDashoffset = offset;
-                        }
-                    };
-                    
-                    updateTimer(); // Jalankan sekali di awal
-                    state.countdownInterval = setInterval(updateTimer, 1000);
-                }
-            });
-            
-            // Generator Background Check (Hanya Admin yg generate)
-            if(!state.tokenCheckInterval && state.user?.role === 'admin') {
-                state.tokenCheckInterval = setInterval(async () => {
-                    const tSnap = await getDoc(doc(db, "system", "token"));
-                    let shouldUpdate = false;
-                    if(tSnap.exists()) {
-                        const d = tSnap.data();
-                        const genTime = d.updatedAt ? d.updatedAt.toDate() : new Date(0);
-                        const now = new Date();
-                        if ((now - genTime) >= 300000) shouldUpdate = true; // > 5 menit
-                    } else {
-                        shouldUpdate = true;
-                    }
-
-                    if(shouldUpdate) {
-                        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                        let c = ""; for(let i=0; i<5; i++) c += chars.charAt(Math.floor(Math.random() * chars.length));
-                        await setDoc(doc(db,"system","token"), {code:c, updatedAt:serverTimestamp()});
-                    }
-                }, 5000); 
-            }
-        }
-
-        // --- EXAM LIST RENDERER ---
-        window.renderExamList = async (container) => {
-            container.innerHTML = '<div class="text-center p-10">Loading...</div>';
-            const q = query(collection(db, "exams"));
-            const snaps = await getDocs(q);
-            const exams = snaps.docs.map(d => ({id:d.id, ...d.data()}));
-            container.innerHTML = `<div class="bg-white rounded-xl shadow-sm border p-6"><div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">Daftar Ujian</h2><button onclick="window.loadAdminPage('editor')" class="bg-blue-600 text-white px-4 py-2 rounded font-bold text-sm">+ Buat Baru</button></div><table class="w-full text-left"><thead><tr class="border-b"><th class="p-4">Mapel</th><th class="p-4">Status</th><th class="p-4 text-right">Aksi</th></tr></thead><tbody>${exams.map(e => `<tr class="border-b"><td class="p-4 font-bold">${e.subject}<br><span class="text-xs text-gray-500">${e.level}</span></td><td class="p-4"><button onclick="window.toggleExamStatus('${e.id}', ${e.isActive})" class="${e.isActive?'bg-green-100 text-green-700':'bg-red-100 text-red-700'} px-3 py-1 rounded text-xs font-bold">${e.isActive?'AKTIF':'NONAKTIF'}</button></td><td class="p-4 text-right"><button onclick='window.editExam(${JSON.stringify(e).replace(/'/g,"&#39;")})' class="text-blue-500 mr-2"><i class="fas fa-edit"></i></button><button onclick="window.deleteExam('${e.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`;
-        };
-
-        // --- RENDER FUNCTIONS ---
-        function renderLogin() {
-            $('app').innerHTML = `
-                <div class="flex h-screen bg-slate-900 justify-center items-center p-4">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-                        
-                        <div class="pt-10 pb-4 text-center">
-                            <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-50 rounded-full mb-4 shadow-sm border border-blue-100">
-                                <i class="fas fa-graduation-cap text-4xl text-blue-600"></i>
-                            </div>
-                            <h2 class="text-2xl font-extrabold text-gray-800 tracking-tight">CBT ExamBrowser</h2>
-                            <p class="text-sm text-gray-500 font-medium">Platform Ujian Online Terintegrasi</p>
-                        </div>
-
-                        <div class="flex border-b border-gray-100 px-6">
-                            <button id="tab-s" class="flex-1 py-3 font-bold text-sm text-blue-600 border-b-2 border-blue-600 transition-colors">SISWA</button>
-                            <button id="tab-a" class="flex-1 py-3 font-bold text-sm text-gray-400 hover:text-gray-600 transition-colors">ADMIN</button>
-                        </div>
-                        
-                        <div id="p-s" class="p-8">
-                            <div class="space-y-5">
-                                <div class="modern-input-group">
-                                    <i class="fas fa-user modern-input-icon"></i>
-                                    <input id="s-name" class="modern-input" placeholder="Nama Lengkap Anda">
-                                </div>
-                                <div class="modern-input-group modern-select-wrapper">
-                                    <i class="fas fa-layer-group modern-input-icon"></i>
-                                    <select id="s-class" class="modern-input modern-select">
-                                        <option value="">-- Pilih Kelas --</option>
-                                        ${generateClassOptions()}
-                                    </select>
-                                </div>
-                                <button onclick="window.loginSiswa()" class="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-blue-700 hover:shadow-blue-500/30 transition-all transform active:scale-95 flex items-center justify-center gap-2">
-                                    <span>MASUK UJIAN</span> <i class="fas fa-arrow-right"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="p-a" class="p-8 hidden">
-                            <div class="space-y-5">
-                                <div class="modern-input-group">
-                                    <i class="fas fa-user-shield modern-input-icon"></i>
-                                    <input id="a-u" class="modern-input" placeholder="Username Admin">
-                                </div>
-                                <div class="modern-input-group">
-                                    <i class="fas fa-lock modern-input-icon"></i>
-                                    <input type="password" id="a-p" class="modern-input" placeholder="Password">
-                                </div>
-                                <button onclick="window.loginAdmin()" class="w-full bg-slate-800 text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-slate-900 hover:shadow-slate-500/30 transition-all transform active:scale-95">
-                                    LOGIN DASHBOARD
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            $('tab-s').onclick=()=>{ 
-                $('p-s').classList.remove('hidden'); $('p-a').classList.add('hidden');
-                $('tab-s').className="flex-1 py-3 font-bold text-sm text-blue-600 border-b-2 border-blue-600 transition-colors";
-                $('tab-a').className="flex-1 py-3 font-bold text-sm text-gray-400 hover:text-gray-600 transition-colors";
-            };
-            $('tab-a').onclick=()=>{ 
-                $('p-s').classList.add('hidden'); $('p-a').classList.remove('hidden');
-                $('tab-s').className="flex-1 py-3 font-bold text-sm text-gray-400 hover:text-gray-600 transition-colors";
-                $('tab-a').className="flex-1 py-3 font-bold text-sm text-blue-600 border-b-2 border-blue-600 transition-colors";
-            };
-        }
-
-        function renderTokenPage() {
-            const level = CLASS_MAPPING[state.user.class];
-            
-            const updateClock = () => {
-                const now = new Date();
-                const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                const elDate = document.getElementById('token-date');
-                const elTime = document.getElementById('token-time');
-                if(elDate) elDate.innerText = dateStr;
-                if(elTime) elTime.innerText = timeStr;
-            };
-
-            $('app').innerHTML = `
-                <div class="flex flex-col h-screen bg-gray-100 justify-center items-center p-4 relative overflow-hidden">
-                    <!-- Decorative BG -->
-                    <div class="absolute top-0 left-0 w-full h-64 bg-blue-600 rounded-b-[3rem] shadow-lg z-0"></div>
-                    
-                    <!-- Time Display -->
-                    <div class="relative z-10 mb-8 text-center text-white">
-                        <div id="token-time" class="text-6xl font-black tracking-wider mb-2 font-mono drop-shadow-md">--:--:--</div>
-                        <div id="token-date" class="text-lg opacity-90 font-medium tracking-wide">...</div>
-                    </div>
-
-                    <!-- Token Card -->
-                    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center relative z-10 border border-gray-100">
-                        <div class="mb-6">
-                            <div class="inline-block p-5 bg-blue-50 rounded-2xl shadow-inner">
-                                <i class="fas fa-key text-4xl text-blue-600"></i>
-                            </div>
-                        </div>
-                        <h2 class="text-2xl font-bold mb-2 text-gray-800">Verifikasi Token</h2>
-                        <p class="text-gray-500 text-sm mb-8">Silakan masukkan kode token yang diberikan pengawas.</p>
-                        
-                        <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl mb-6 text-sm text-left space-y-3">
-                            <div class="flex justify-between border-b border-gray-200 pb-2">
-                                <span class="text-gray-500 font-medium"><i class="fas fa-user mr-2 text-blue-400"></i>Nama</span>
-                                <strong class="text-gray-800">${state.user.name}</strong>
-                            </div>
-                            <div class="flex justify-between pt-1">
-                                <span class="text-gray-500 font-medium"><i class="fas fa-graduation-cap mr-2 text-blue-400"></i>Kelas</span>
-                                <strong class="text-gray-800">${state.user.class}</strong>
-                            </div>
-                        </div>
-                        
-                        <div class="relative mb-8">
-                            <input id="token-in" type="text" class="w-full text-center text-3xl font-mono font-bold border-2 border-gray-200 rounded-2xl py-4 uppercase tracking-[0.5em] focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition placeholder-gray-200 text-gray-700" placeholder="TOKEN" maxlength="5">
-                        </div>
-                        
-                        <button onclick="window.checkToken()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-bold hover:shadow-lg transform active:scale-[0.98] transition text-lg shadow-blue-200 shadow-lg">
-                            MULAI UJIAN <i class="fas fa-arrow-right ml-2"></i>
-                        </button>
-                        
-                        <button onclick="window.location.reload()" class="mt-6 text-red-500 text-sm font-bold hover:underline flex items-center justify-center w-full gap-1"><i class="fas fa-sign-out-alt"></i> Batal / Logout</button>
-                    </div>
-                </div>
-            `;
-            
-            if(state.clockInterval) clearInterval(state.clockInterval);
-            state.clockInterval = setInterval(updateClock, 1000);
-            updateClock();
-        }
-
-        function renderExamPage() {
-            if(!state.isPreview) { try { document.documentElement.requestFullscreen().catch(e=>{}); } catch(e){} }
-            const q = state.examData.questions[state.currentQuestionIndex];
-            const totalQ = state.examData.questions.length;
-            const isDoubt = state.doubts[state.currentQuestionIndex];
-            const imagesHtml = q.images && q.images.length > 0 ? `<div class="flex gap-2 flex-wrap mb-4">${q.images.map(src => `<img src="${src}" class="h-32 object-cover rounded border cursor-pointer hover:opacity-75" onclick="Swal.fire({imageUrl: '${src}', showConfirmButton: false})">`).join('')}</div>` : '';
-
-            let content = '';
-            if(q.type === 'PG') {
-                content = `<div class="space-y-2">` + q.options.map((opt, i) => {
-                    const active = state.answers[state.currentQuestionIndex] === opt;
-                    const escOpt = opt.replace(/'/g, "\\'");
-                    return `<div onclick="window.handleSelectOption('PG', '${escOpt}', ${i})" id="opt-${i}" class="option-card flex items-center p-3 border rounded-lg cursor-pointer transition hover:bg-gray-50 ${active ? 'selected bg-blue-100 border-blue-500' : 'bg-white'}"><div class="opt-char w-8 h-8 flex items-center justify-center bg-gray-200 rounded font-bold mr-3 ${active ? 'bg-blue-600 text-white' : ''}">${String.fromCharCode(65+i)}</div><div class="text-lg">${opt}</div></div>`;
-                }).join('') + `</div>`;
-            } else if(q.type === 'TrueFalse') {
-                content = `<div class="space-y-2">` + ['True','False'].map((o, i) => {
-                    const active = state.answers[state.currentQuestionIndex] === o;
-                    return `<div onclick="window.handleSelectOption('TF', '${o}', ${i})" id="opt-${i}" class="option-card p-3 border rounded text-center font-bold cursor-pointer transition ${active ? 'selected bg-blue-600 text-white border-blue-600' : 'bg-white hover:bg-gray-50'}">${o}</div>`;
-                }).join('') + `</div>`;
-            } else if(q.type === 'Matching') {
-                if(!q.shuffledRight) q.shuffledRight = q.pairs.map((p, i) => ({ text: p.right, id: i })).sort(() => Math.random() - 0.5);
-                content = `<div class="bg-white p-4 rounded border relative select-none" id="match-container-${state.currentQuestionIndex}" style="min-height: 300px;"><svg class="absolute inset-0 w-full h-full pointer-events-none z-10" id="match-svg"></svg><div class="flex justify-between gap-8 relative z-20"><div class="flex-1 space-y-6">${q.pairs.map((p, i) => `<div id="left-${i}" class="match-item left-item bg-gray-50 border p-4 rounded shadow-sm text-sm font-medium relative" onclick="window.handleMatchClick('left', ${i})">${p.left}<div class="match-point"></div></div>`).join('')}</div><div class="flex-1 space-y-6">${q.shuffledRight.map((item, i) => `<div id="right-${item.id}" class="match-item right-item bg-gray-50 border p-4 rounded shadow-sm text-sm relative" onclick="window.handleMatchClick('right', ${item.id})"><div class="match-point"></div>${item.text}</div>`).join('')}</div></div><div class="text-center mt-4 text-xs text-gray-400">Klik titik kiri lalu klik titik kanan untuk menghubungkan.</div></div>`;
-                setTimeout(() => window.drawMatchLines(), 100);
-                window.addEventListener('resize', window.drawMatchLines);
-            } else if(q.type === 'Essay') {
-                content = `<textarea oninput="window.handleEssayInput(this.value)" class="w-full h-48 p-4 border rounded text-lg focus:ring-2 focus:ring-blue-500">${state.answers[state.currentQuestionIndex]||''}</textarea>`;
-            }
-
-            const referenceHtml = q.referenceText ? `<div class="mb-4 inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold border border-yellow-200"><i class="fas fa-bookmark mr-1"></i> ${q.referenceText}</div>` : '';
-
-            $('app').innerHTML = `
-                <div class="flex flex-col h-screen bg-white">
-                    <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center shadow-md z-30">
-                        <div class="flex gap-3 items-center"><div class="bg-white/10 p-2 rounded hidden md:block"><i class="fas fa-user"></i></div><div class="leading-tight"><div class="font-bold text-sm md:text-lg truncate w-32 md:w-auto">${state.user.name}</div><div class="text-[10px] md:text-xs text-gray-400">${state.examData.subject || 'Ujian'}</div></div></div>
-                        ${state.isPreview ? `<button onclick="window.closePreview()" class="bg-red-500 px-4 py-1 rounded font-bold text-sm">Tutup</button>` : `<div class="flex items-center gap-3"><div class="text-center bg-slate-800 px-3 py-1 rounded border border-slate-700"><div id="timer" class="text-lg md:text-xl font-mono font-bold text-yellow-400">Loading</div></div><button onclick="window.toggleStudentNav()" class="lg:hidden bg-slate-700 p-2 rounded text-white"><i class="fas fa-th-large"></i></button></div>`}
-                        <button onclick="window.finishExam()" class="hidden lg:block bg-green-600 px-4 py-2 rounded font-bold hover:bg-green-500 text-sm">SELESAI</button>
-                    </div>
-                    <div class="flex flex-1 overflow-hidden relative"><div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50"><div class="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border min-h-[500px] flex flex-col"><div class="p-4 border-b flex justify-between items-center bg-gray-50/50 rounded-t-xl"><span class="bg-blue-600 text-white px-3 py-1 rounded font-bold text-sm">Soal No. ${state.currentQuestionIndex+1}</span><span class="text-gray-500 font-bold text-xs uppercase">${q.type}</span></div><div class="p-6 md:p-8 flex-1">${referenceHtml}${q.wacana ? `<div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-400 text-gray-700 leading-relaxed text-justify text-sm">${q.wacana.replace(/\n/g,'<br>')}</div>` : ''}<div class="text-lg md:text-xl font-medium text-gray-800 mb-6 leading-relaxed" style="white-space: pre-wrap;">${q.text}</div>${imagesHtml}<div class="max-w-3xl">${content}</div></div><div class="p-4 border-t bg-gray-50 flex justify-between items-center rounded-b-xl"><button onclick="window.navQuestion(-1)" ${state.currentQuestionIndex===0?'disabled':''} class="px-4 py-2 rounded bg-white border shadow-sm hover:bg-gray-100 disabled:opacity-50 text-sm md:text-base"><i class="fas fa-chevron-left md:hidden"></i><span class="hidden md:inline">Sebelumnya</span></button><label class="flex items-center gap-2 cursor-pointer bg-yellow-100 px-3 py-2 rounded border border-yellow-200 hover:bg-yellow-200 transition"><input type="checkbox" onchange="window.toggleDoubt(this.checked)" ${isDoubt?'checked':''} class="w-4 h-4 text-yellow-600 rounded"><span class="text-yellow-800 font-bold text-xs md:text-sm">Ragu-ragu</span></label>${state.currentQuestionIndex===totalQ-1 ? `<button onclick="window.finishExam()" class="lg:hidden px-4 py-2 rounded bg-green-600 text-white shadow font-bold text-sm">Selesai</button>` : `<button onclick="window.navQuestion(1)" class="px-4 py-2 rounded bg-blue-600 text-white shadow hover:bg-blue-700 text-sm md:text-base"><i class="fas fa-chevron-right md:hidden"></i><span class="hidden md:inline">Selanjutnya</span></button>`}</div></div></div><div class="hidden lg:flex w-80 bg-white border-l flex-col z-20 shadow-lg">${renderNavContent()}</div><div id="student-drawer" class="mobile-drawer student-drawer lg:hidden flex flex-col"><div class="p-4 border-b flex justify-between items-center bg-gray-100"><span class="font-bold">Navigasi Soal</span><button onclick="window.toggleStudentNav()" class="text-gray-500"><i class="fas fa-times text-xl"></i></button></div>${renderNavContent()}</div><div id="drawer-overlay" onclick="window.closeDrawers()" class="drawer-overlay"></div></div></div>`;
-        }
-
-        function renderNavContent() {
-             return `<div class="p-4 border-b bg-gray-50 font-bold text-gray-700 flex items-center gap-2 shadow-sm"><i class="fas fa-th-large text-blue-500"></i> Daftar Soal</div><div class="p-4 overflow-y-auto flex-1"><div id="nav-grid" class="grid grid-cols-5 gap-2">${renderNavGridItems()}</div><div class="mt-6 space-y-2 text-xs font-bold text-gray-500 border-t pt-4"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-[#10b981]"></div> Sudah Dijawab</div><div class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-[#f59e0b]"></div> Ragu-ragu</div></div></div>`;
-        }
-
-        function renderNavGridItems() {
-            return state.examData.questions.map((_, i) => {
-                const ans = state.answers[i];
-                const hasAns = ans && (typeof ans === 'object' ? Object.keys(ans).length > 0 : true) || (ans && ans.length > 0);
-                const isDbt = state.doubts[i];
-                const isCur = state.currentQuestionIndex === i;
-                let cls = ''; if (isCur) cls = 'active'; else if (isDbt) cls = 'doubt'; else if (hasAns) cls = 'answered';
-                return `<div onclick="window.jumpQuestion(${i})" class="question-nav-btn ${cls}">${i+1}</div>`;
-            }).join('');
-        }
-
-        // --- ADMIN DASHBOARD ---
-        function renderAdminDashboard(initialPage = 'list', initialData = null) {
-            $('app').innerHTML = `
-                <div class="flex h-screen bg-gray-100 text-sm font-inter overflow-hidden">
-                    <div class="lg:hidden w-full bg-slate-900 text-white p-4 flex items-center justify-between z-30 shadow-md absolute top-0">
-                        <div class="flex items-center gap-3"><button onclick="window.toggleAdminNav()" class="text-white hover:bg-slate-700 p-1 rounded"><i class="fas fa-bars text-xl"></i></button><div class="font-bold flex items-center gap-2"><i class="fas fa-shield-alt"></i> CBT ADMIN</div></div>
-                    </div>
-                    <div id="admin-drawer" class="mobile-drawer admin-drawer lg:static lg:transform-none lg:w-64 lg:flex lg:flex-col lg:shadow-2xl lg:z-20 bg-slate-900 text-slate-300 h-full">
-                        <div class="p-6 border-b border-slate-700 font-bold text-xl text-white tracking-wider flex items-center gap-2 hidden lg:flex"><i class="fas fa-shield-alt text-blue-500"></i> CBT ADMIN</div>
-                        <div class="p-4 lg:hidden border-b border-slate-700 flex justify-end"><button onclick="window.toggleAdminNav()" class="text-white"><i class="fas fa-times"></i></button></div>
-                        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                            <button onclick="window.loadAdminPage('list');window.closeDrawers()" class="w-full text-left p-3 rounded hover:bg-slate-800 flex items-center gap-3 transition"><i class="fas fa-list w-6"></i> Daftar Ujian</button>
-                            <button onclick="window.loadAdminPage('editor');window.closeDrawers()" class="w-full text-left p-3 rounded hover:bg-slate-800 flex items-center gap-3 transition"><i class="fas fa-plus-circle w-6"></i> Buat Ujian Baru</button>
-                            <button onclick="window.loadAdminPage('results');window.closeDrawers()" class="w-full text-left p-3 rounded hover:bg-slate-800 flex items-center gap-3 transition"><i class="fas fa-chart-line w-6"></i> Hasil Ujian</button>
-                            <button onclick="window.loadAdminPage('token');window.closeDrawers()" class="w-full text-left p-3 rounded hover:bg-slate-800 flex items-center gap-3 transition"><i class="fas fa-key w-6"></i> Monitor Token</button>
-                        </nav>
-                        <div class="p-4 border-t border-slate-700"><button onclick="location.reload()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold shadow transition"><i class="fas fa-sign-out-alt mr-2"></i> Logout</button></div>
-                    </div>
-                    <div class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50 pt-14 lg:pt-0"><div id="admin-content" class="flex-1 overflow-y-auto p-4 md:p-6 relative"></div></div>
-                    <div id="drawer-overlay" onclick="window.closeDrawers()" class="drawer-overlay lg:hidden"></div>
-                </div>`;
-            window.loadAdminPage(initialPage, initialData);
-        }
-
-        window.loadAdminPage = (page, data = null) => {
-            if(state.countdownInterval) clearInterval(state.countdownInterval);
-            const container = $('admin-content');
-            if (page === 'list') window.renderExamList(container);
-            else if (page === 'editor') {
-                if(data && !data.resume) {
-                    state.editorQuestions = data.questions || [];
-                    state.currentExamId = data.id;
-                    setTimeout(() => { if($('ed-level')) $('ed-level').value = data.level; if($('ed-subject')) $('ed-subject').value = data.subject || ''; if($('ed-time')) $('ed-time').value = data.timeLimit; }, 100);
-                } else if (!data) { state.editorQuestions = []; state.currentExamId = null; }
-                container.innerHTML = `
-                    <div class="flex flex-col lg:flex-row h-full gap-6">
-                        <div class="w-full lg:w-80 flex-shrink-0 bg-white p-6 rounded-xl shadow-sm border border-gray-200 overflow-y-auto h-auto lg:h-full" id="editor-settings-panel">
-                            <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">PROPERTI UJIAN</h3>
-                            <div class="space-y-4 mb-6">
-                                <div><label class="text-xs font-bold text-gray-500 uppercase">Mata Pelajaran</label><input type="text" id="ed-subject" class="w-full p-2 border rounded bg-gray-50"></div>
-                                <div><label class="text-xs font-bold text-gray-500 uppercase">Tingkatan</label><select id="ed-level" class="w-full p-2 border rounded bg-gray-50">${ADMIN_LEVELS.map(l=>`<option value="${l}">${l}</option>`).join('')}</select></div>
-                                <div><label class="text-xs font-bold text-gray-500 uppercase">Durasi (Menit)</label><input type="number" id="ed-time" value="90" class="w-full p-2 border rounded bg-gray-50"></div>
-                            </div>
-                            <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">TOOLBOX</h3>
-                            <div class="grid grid-cols-2 gap-2 mb-6">
-                                <button onclick="window.addQ('PG')" class="p-2 rounded bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100">+ PG</button>
-                                <button onclick="window.addQ('TrueFalse')" class="p-2 rounded bg-green-50 text-green-700 text-xs font-bold hover:bg-green-100">+ True/False</button>
-                                <button onclick="window.addQ('Matching')" class="p-2 rounded bg-purple-50 text-purple-700 text-xs font-bold hover:bg-purple-100">+ Jodoh</button>
-                                <button onclick="window.addQ('Essay')" class="p-2 rounded bg-yellow-50 text-yellow-700 text-xs font-bold hover:bg-yellow-100">+ Essay</button>
-                            </div>
-                            <div class="bg-indigo-50 p-4 rounded mb-4 border border-indigo-100">
-                                <h4 class="font-bold text-xs text-indigo-700 mb-3 flex items-center gap-2"><i class="fas fa-robot"></i> GENERATE SOAL VIA AI</h4>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button onclick="window.openAI_File()" class="bg-white border border-indigo-200 text-indigo-600 p-2 rounded text-xs font-bold hover:bg-indigo-50">Upload File</button>
-                                    <button onclick="window.openAI_Text()" class="bg-white border border-indigo-200 text-indigo-600 p-2 rounded text-xs font-bold hover:bg-indigo-50">Input Teks</button>
-                                </div>
-                                <input type="file" id="ai-file-input" class="hidden" accept=".pdf,.docx" onchange="window.handleAIFile(this)">
-                            </div>
-                            <div class="lg:hidden flex border-b mb-4 bg-white sticky top-0 z-10"><button onclick="window.setMobileEditorTab('settings')" class="flex-1 p-3 font-bold text-sm border-b-2 border-blue-600 text-blue-600 editor-tab-btn active" id="mob-tab-settings">Pengaturan</button><button onclick="window.setMobileEditorTab('list')" class="flex-1 p-3 font-bold text-sm text-gray-500 editor-tab-btn" id="mob-tab-list">Daftar Soal</button></div>
-                            
-                            <!-- MOBILE STICKY FOOTER -->
-                            <div class="mobile-editor-footer">
-                                <button onclick="window.previewExam()" class="flex-1 bg-gray-800 text-white p-3 rounded font-bold hover:bg-gray-900 shadow text-sm">PREVIEW</button>
-                                <button onclick="window.saveToDB()" class="flex-1 bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 shadow text-sm">SIMPAN</button>
-                                <button onclick="window.loadAdminPage('list')" class="bg-red-500 text-white p-3 rounded font-bold hover:bg-red-600 shadow text-sm px-4"><i class="fas fa-arrow-left"></i></button>
-                            </div>
-                            
-                            <div class="desktop-editor-actions">
-                                <button onclick="window.previewExam()" class="w-full mb-3 bg-gray-800 text-white p-3 rounded font-bold hover:bg-gray-900 shadow">PREVIEW</button>
-                                <button onclick="window.saveToDB()" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 shadow-lg">SIMPAN UJIAN</button>
-                            </div>
-                        </div>
-                        <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full overflow-hidden hidden lg:flex" id="editor-list-panel">
-                            <div class="p-4 border-b bg-gray-50 flex justify-between items-center"><span class="font-bold text-gray-700" id="q-total">0 Soal</span><button onclick="window.clearAllQ()" class="text-red-500 text-xs font-bold hover:underline">HAPUS SEMUA</button></div>
-                            <div id="q-list" class="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50"></div>
-                        </div>
-                    </div>`;
-                setTimeout(() => window.renderQList(), 0);
-            } else if (page === 'results') window.loadResults(container);
-            else if (page === 'token') {
-                container.innerHTML = `
-                    <div class="flex items-center justify-center h-full relative overflow-hidden">
-                         <div class="text-center z-10">
-                             <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border border-gray-100 relative overflow-hidden">
-                                 <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-                                 <h3 class="text-gray-400 font-bold uppercase tracking-[0.3em] mb-4 text-sm">TOKEN UJIAN AKTIF</h3>
-                                 
-                                 <!-- Animated Token Display -->
-                                 <div class="text-7xl font-black text-slate-800 font-mono tracking-tighter mb-8 relative group cursor-default" id="adm-token">
-                                     LOADING
-                                     <div class="absolute -inset-4 bg-blue-50 rounded-full blur-2xl opacity-0 group-hover:opacity-50 transition duration-500"></div>
-                                 </div>
-                                 
-                                 <!-- Circular Timer -->
-                                 <div class="flex justify-center items-center gap-4">
-                                     <div class="relative w-16 h-16">
-                                         <svg class="w-full h-full transform -rotate-90">
-                                             <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="4" fill="none"/>
-                                             <circle class="progress-ring__circle" cx="32" cy="32" r="28" stroke="#2563eb" stroke-width="4" fill="none" stroke-dasharray="176" stroke-dashoffset="176"/>
-                                         </svg>
-                                         <div class="absolute inset-0 flex items-center justify-center font-bold text-xs text-gray-600" id="token-countdown">05:00</div>
-                                     </div>
-                                     <div class="text-left text-xs text-gray-400 leading-tight">
-                                         <p>Token berubah otomatis<br>setiap 5 menit.</p>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
-                         <!-- Background Deco -->
-                         <div class="absolute inset-0 z-0 opacity-50 pointer-events-none">
-                             <div class="absolute top-10 left-10 w-32 h-32 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-                             <div class="absolute top-10 right-10 w-32 h-32 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-                             <div class="absolute -bottom-8 left-20 w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
-                         </div>
-                    </div>`;
-                startTokenListener();
-            }
-        };
-
-        // --- HELPER UNTUK UI SOAL ---
-        window.handleSelectOption = (type, val, index) => {
-            state.answers[state.currentQuestionIndex] = val;
-            if(type === 'PG') {
-                document.querySelectorAll('.option-card').forEach(el => { el.classList.remove('selected','bg-blue-100','border-blue-500'); el.classList.add('bg-white'); el.querySelector('.opt-char').classList.remove('bg-blue-600','text-white'); });
-                const sel = document.getElementById(`opt-${index}`);
-                if(sel) { sel.classList.add('selected','bg-blue-100','border-blue-500'); sel.querySelector('.opt-char').classList.add('bg-blue-600','text-white'); }
-            } else if (type === 'TF') {
-                document.querySelectorAll('.option-card').forEach(el => { el.classList.remove('selected','bg-blue-600','text-white'); el.classList.add('bg-white'); });
-                const sel = document.getElementById(`opt-${index}`);
-                if(sel) sel.classList.add('selected','bg-blue-600','text-white');
-            }
-            window.updateNavGrid();
-        };
-        window.handleMatchClick = (side, index) => {
-            if(!state.matchSelection) {
-                state.matchSelection = { side, index };
-                document.querySelectorAll('.match-item').forEach(el => el.classList.remove('selected'));
-                document.getElementById(`${side}-${index}`).classList.add('selected');
-                document.querySelector(`#${side}-${index} .match-point`).classList.add('active');
-            } else {
-                const first = state.matchSelection;
-                if(first.side === side) {
-                     state.matchSelection = { side, index };
-                     document.querySelectorAll('.match-item').forEach(el => el.classList.remove('selected'));
-                     document.querySelectorAll('.match-point').forEach(el => el.classList.remove('active'));
-                     document.getElementById(`${side}-${index}`).classList.add('selected');
-                     document.querySelector(`#${side}-${index} .match-point`).classList.add('active');
-                } else {
-                    const leftIdx = side === 'left' ? index : first.index;
-                    const rightIdx = side === 'right' ? index : first.index;
-                    const q = state.examData.questions[state.currentQuestionIndex];
-                    const rightText = q.shuffledRight.find(x => x.id === rightIdx).text;
-                    const leftText = q.pairs[leftIdx].left;
-                    if(!state.answers[state.currentQuestionIndex]) state.answers[state.currentQuestionIndex] = {};
-                    state.answers[state.currentQuestionIndex][leftText] = rightText;
-                    state.matchSelection = null;
-                    document.querySelectorAll('.match-item').forEach(el => el.classList.remove('selected'));
-                    document.querySelectorAll('.match-point').forEach(el => el.classList.remove('active'));
-                    window.drawMatchLines(); window.updateNavGrid();
-                }
-            }
-        };
-        window.drawMatchLines = () => {
-            const svg = document.getElementById('match-svg');
-            if(!svg) return;
-            svg.innerHTML = ''; 
-            const q = state.examData.questions[state.currentQuestionIndex];
-            const currentAns = state.answers[state.currentQuestionIndex] || {};
-            Object.entries(currentAns).forEach(([leftTxt, rightTxt]) => {
-                const leftIdx = q.pairs.findIndex(p => p.left === leftTxt);
-                const rightObj = q.shuffledRight.find(x => x.text === rightTxt);
-                if(leftIdx !== -1 && rightObj) {
-                    const leftEl = document.querySelector(`#left-${leftIdx} .match-point`);
-                    const rightEl = document.querySelector(`#right-${rightObj.id} .match-point`);
-                    if(leftEl && rightEl) {
-                        const sR = svg.getBoundingClientRect();
-                        const lR = leftEl.getBoundingClientRect();
-                        const rR = rightEl.getBoundingClientRect();
-                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                        line.setAttribute("x1", lR.left + lR.width/2 - sR.left);
-                        line.setAttribute("y1", lR.top + lR.height/2 - sR.top);
-                        line.setAttribute("x2", rR.left + rR.width/2 - sR.left);
-                        line.setAttribute("y2", rR.top + rR.height/2 - sR.top);
-                        line.onclick = () => { delete state.answers[state.currentQuestionIndex][leftTxt]; window.drawMatchLines(); window.updateNavGrid(); };
-                        svg.appendChild(line);
-                    }
-                }
-            });
-        };
-        window.updateNavGrid = () => { const g=$('nav-grid'); if(g) g.innerHTML = renderNavGridItems(); };
-        window.toggleDoubt = (c) => { state.doubts[state.currentQuestionIndex] = c; window.updateNavGrid(); };
-        window.renderExamList = async (container) => {
-            container.innerHTML = '<div class="text-center p-10">Loading...</div>';
-            const q = query(collection(db, "exams"));
-            const snaps = await getDocs(q);
-            const exams = snaps.docs.map(d => ({id:d.id, ...d.data()}));
-            container.innerHTML = `<div class="bg-white rounded-xl shadow-sm border p-6"><div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold">Daftar Ujian</h2><button onclick="window.loadAdminPage('editor')" class="bg-blue-600 text-white px-4 py-2 rounded font-bold text-sm">+ Buat Baru</button></div><table class="w-full text-left"><thead><tr class="border-b"><th class="p-4">Mapel</th><th class="p-4">Status</th><th class="p-4 text-right">Aksi</th></tr></thead><tbody>${exams.map(e => `<tr class="border-b"><td class="p-4 font-bold">${e.subject}<br><span class="text-xs text-gray-500">${e.level}</span></td><td class="p-4"><button onclick="window.toggleExamStatus('${e.id}', ${e.isActive})" class="${e.isActive?'bg-green-100 text-green-700':'bg-red-100 text-red-700'} px-3 py-1 rounded text-xs font-bold">${e.isActive?'AKTIF':'NONAKTIF'}</button></td><td class="p-4 text-right"><button onclick='window.editExam(${JSON.stringify(e).replace(/'/g,"&#39;")})' class="text-blue-500 mr-2"><i class="fas fa-edit"></i></button><button onclick="window.deleteExam('${e.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`;
-        };
-
-        // --- DRAG AND DROP LOGIC (REORDER SOAL) ---
-        window.moveQ = (from, dir) => {
-            if(dir === -1 && from > 0) {
-                const item = state.editorQuestions.splice(from, 1)[0];
-                state.editorQuestions.splice(from-1, 0, item);
-            } else if (dir === 1 && from < state.editorQuestions.length-1) {
-                const item = state.editorQuestions.splice(from, 1)[0];
-                state.editorQuestions.splice(from+1, 0, item);
-            }
-            window.renderQList();
-        };
-
-        // --- MOBILE EDITOR TAB LOGIC ---
-        window.setMobileEditorTab = (tab) => {
-            const settings = document.getElementById('editor-settings-panel');
-            const list = document.getElementById('editor-list-panel');
-            const btnS = document.getElementById('mob-tab-settings');
-            const btnL = document.getElementById('mob-tab-list');
-
-            if(window.innerWidth < 1024) {
-                if(tab === 'settings') {
-                    settings.style.display = 'block';
-                    list.style.display = 'none';
-                    // Classes for active tab
-                    btnS.classList.add('text-blue-600', 'border-blue-600');
-                    btnS.classList.remove('text-gray-500');
-                    
-                    btnL.classList.remove('text-blue-600', 'border-blue-600');
-                    btnL.classList.add('text-gray-500');
-                } else {
-                    settings.style.display = 'none';
-                    list.classList.remove('hidden'); // Ensure hidden class removed
-                    list.style.display = 'flex'; // Explicit display flex for panel
-                    
-                    btnL.classList.add('text-blue-600', 'border-blue-600');
-                    btnL.classList.remove('text-gray-500');
-
-                    btnS.classList.remove('text-blue-600', 'border-blue-600');
-                    btnS.classList.add('text-gray-500');
-                }
-            }
-        };
-
-
-        window.renderQList = () => {
-            const listEl = $('q-list');
-            if(!listEl) return;
-            
-            // RESTORE SCROLL POS
-            const currentScroll = document.getElementById('editor-list-panel')?.scrollTop || 0;
-            const currentScrollMob = document.getElementById('q-list')?.scrollTop || 0;
-
-            listEl.innerHTML = state.editorQuestions.map((q, i) => `
-                <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-sm relative group transition hover:shadow-md">
-                    <div class="flex justify-between items-center mb-4 border-b pb-2">
-                        <div class="flex items-center gap-2">
-                            <button onclick="window.moveQ(${i}, -1)" class="text-gray-400 hover:text-blue-600 px-1"><i class="fas fa-arrow-up"></i></button>
-                            <button onclick="window.moveQ(${i}, 1)" class="text-gray-400 hover:text-blue-600 px-1"><i class="fas fa-arrow-down"></i></button>
-                            <span class="font-bold text-lg text-blue-600 ml-2">Soal No. ${i+1}</span>
-                        </div>
-                        <button onclick="window.delQ(${i})" class="text-red-400 hover:text-red-600 transition p-2"><i class="fas fa-trash-alt"></i> Hapus</button>
-                    </div>
-                    <div class="flex gap-2 mb-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs font-bold uppercase border">${q.type}</span><input type="number" placeholder="Poin" class="w-20 text-xs border rounded px-2" value="${q.points||0}" onchange="window.updQ(${i},'points',this.value)"><input type="text" placeholder="Penanda Soal" class="border rounded px-2 text-xs flex-1" value="${escapeHtml(q.referenceText||'')}" onchange="window.updQ(${i},'referenceText',this.value)"></div>
-                    <div class="mb-4 space-y-3"><div class="border rounded-lg overflow-hidden"><div class="bg-gray-50 p-1 flex gap-1 border-b editor-toolbar"><span class="text-xs font-bold p-2 text-gray-500">WACANA:</span><button onclick="window.insTagWacana(${i},'b')" class="font-bold">B</button><button onclick="window.insTagWacana(${i},'i')" class="italic">I</button><button onclick="window.insTagWacana(${i},'u')" class="underline">U</button></div><textarea id="qwacana-${i}" placeholder="Wacana" class="w-full p-3 bg-white text-sm h-20 outline-none" onchange="window.updQ(${i},'wacana',this.value)">${q.wacana||''}</textarea></div><div class="border rounded-lg overflow-hidden"><div class="bg-gray-50 p-1 flex gap-1 border-b editor-toolbar"><span class="text-xs font-bold p-2 text-gray-500">PERTANYAAN:</span><button onclick="window.insTag(${i},'b')" class="font-bold">B</button><button onclick="window.insTag(${i},'i')" class="italic">I</button><button onclick="window.insTag(${i},'u')" class="underline">U</button><button onclick="window.insTag(${i},'sup')" class="text-xs">x²</button><button onclick="window.insTag(${i},'sub')" class="text-xs">x₂</button></div><textarea id="qtext-${i}" placeholder="Ketik Pertanyaan..." class="w-full p-3 outline-none" rows="3" onchange="window.updQ(${i},'text',this.value)">${q.text||''}</textarea></div><div class="flex items-center gap-2"><label class="cursor-pointer bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-xs font-bold text-gray-600 flex items-center gap-1"><i class="fas fa-image"></i> Upload Gambar (Max 3)<input type="file" class="hidden" multiple accept="image/*" onchange="window.handleImageUpload(this, ${i})"></label><div id="img-preview-${i}" class="flex gap-2">${(q.images||[]).map((img,idx)=>`<div class="relative"><img src="${img}" class="h-10 w-10 object-cover rounded border"><button onclick="window.delImg(${i},${idx})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">&times;</button></div>`).join('')}</div></div></div>${renderOptions(q,i)}
-                </div>`).join('');
-            
-            $('q-total').innerText = `${state.editorQuestions.length} Soal`;
-
-            // RESTORE SCROLL
-            if(document.getElementById('editor-list-panel')) document.getElementById('editor-list-panel').scrollTop = currentScroll;
-            if(document.getElementById('q-list')) document.getElementById('q-list').scrollTop = currentScrollMob;
-        };
-
-        function renderOptions(q, i) {
-            if (q.type === 'PG') return `<div class="space-y-2">${q.options.map((o,k)=>`<div class="flex gap-2 items-center"><input type="radio" name="k-${i}" ${q.key===o?'checked':''} onclick="window.setKey(${i},'${o.replace(/'/g,"\\'")}')"><span class="font-bold text-gray-400 w-6 h-6 flex items-center justify-center border rounded bg-gray-50 text-xs">${String.fromCharCode(65+k)}</span><input class="flex-1 border p-2 rounded text-sm" value="${escapeHtml(o)}" onchange="window.updOpt(${i},${k},this.value)" placeholder="Opsi"><button onclick="window.delOpt(${i},${k})" class="text-red-300 hover:text-red-500 px-1">x</button></div>`).join('')}<div class="flex gap-2 mt-2 items-center"><button onclick="window.addOpt(${i})" class="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded font-bold hover:bg-blue-100">+ Tambah Opsi</button><textarea class="flex-1 border border-dashed rounded p-1 text-xs h-8" placeholder="Magic Paste..." oninput="window.handlePasteOptions(${i}, this.value); this.value=''"></textarea></div></div>`;
-            if (q.type === 'TrueFalse') return `<div class="flex gap-4"><label class="flex gap-2 items-center p-2 border rounded cursor-pointer bg-green-50 hover:bg-green-100"><input type="radio" name="tf-${i}" ${q.key==='True'?'checked':''} onclick="window.setKey(${i},'True')"><span class="font-bold text-green-700">TRUE</span></label><label class="flex gap-2 items-center p-2 border rounded cursor-pointer bg-red-50 hover:bg-red-100"><input type="radio" name="tf-${i}" ${q.key==='False'?'checked':''} onclick="window.setKey(${i},'False')"><span class="font-bold text-red-700">FALSE</span></label></div>`;
-            if (q.type === 'Matching') return `<div class="bg-purple-50 p-4 rounded text-sm border border-purple-200"><div class="font-bold text-purple-800 mb-2">PASANGAN</div>${q.pairs.map((p,k)=>`<div class="flex gap-2 mb-2 items-center"><span class="text-xs font-bold text-gray-400 w-4">${k+1}.</span><input class="flex-1 p-2 border rounded text-sm" placeholder="Kiri" value="${escapeHtml(p.left)}" onchange="window.updPair(${i},${k},'left',this.value)"><button onclick="window.delPair(${i},${k})" class="text-red-400">x</button><input class="flex-1 p-2 border rounded text-sm" placeholder="Kanan" value="${escapeHtml(p.right)}" onchange="window.updPair(${i},${k},'right',this.value)"></div>`).join('')}<button onclick="window.addPair(${i})" class="mt-2 text-xs bg-purple-600 text-white px-3 py-1 rounded font-bold">+ Tambah Pasangan</button></div>`;
-            return '';
-        }
-        // Shortened logic helpers remain same as before...
-        window.handlePasteOptions = (i,t)=>{ const l=t.split(/\n/).map(x=>x.trim()).filter(x=>x); if(l.length){ while(state.editorQuestions[i].options.length<l.length&&state.editorQuestions[i].options.length<5) state.editorQuestions[i].options.push(''); l.slice(0,5).forEach((x,k)=>state.editorQuestions[i].options[k]=x.replace(/^[A-Ea-e1-5][\.\)]\s*/,'')); renderQList(); }};
-        window.handleEssayInput = (v)=>{ state.answers[state.currentQuestionIndex]=v; window.updateNavGrid(); };
-        window.loginSiswa = async ()=>{ 
-            if(!$('s-name').value || !$('s-class').value) {
-                return Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Nama dan Kelas wajib diisi!',
-                    backdrop: `rgba(0,0,123,0.4)`
-                });
-            }
-            await signInAnonymously(auth); 
-            state.user={name:$('s-name').value,class:$('s-class').value}; 
-            renderTokenPage(); 
-        };
-        window.checkToken = async ()=>{ const t=await getDoc(doc(db,"system","token")); if($('token-in').value.toUpperCase()===(t.exists()?t.data().code:"ABCDE")){ const q=query(collection(db,"exams"),where("level","==",CLASS_MAPPING[state.user.class]),where("isActive","==",true)); const s=await getDocs(q); if(s.empty) return Swal.fire('Info','Tidak ada ujian','info'); state.examData=s.docs[0].data(); state.isPreview=false; state.cheatCount=0; state.answers={}; state.view = 'exam'; state.startTime = new Date(); startTimer(state.examData.timeLimit*60); renderExamPage(); } else Swal.fire('Error','Token Salah','error'); };
-        window.toggleAdminNav = ()=>{ $('admin-drawer').classList.toggle('open'); $('drawer-overlay').classList.toggle('show'); };
-        window.toggleStudentNav = ()=>{ $('student-drawer').classList.toggle('open'); $('drawer-overlay').classList.toggle('show'); };
-        window.closeDrawers = ()=>{ document.querySelectorAll('.mobile-drawer').forEach(d=>d.classList.remove('open')); $('drawer-overlay').classList.remove('show'); };
-        window.navQuestion = (d)=>{ state.currentQuestionIndex+=d; renderExamPage(); };
-        window.jumpQuestion = (i)=>{ state.currentQuestionIndex=i; if(window.innerWidth<1024) window.closeDrawers(); renderExamPage(); };
-        function startTimer(d){ clearInterval(state.timerInterval); state.timerInterval=setInterval(()=>{ let m=Math.floor(d/60),s=d%60; if($('timer')) $('timer').innerText=`${m}:${s<10?'0'+s:s}`; if(--d<0) window.finishExam(true); },1000); }
-        window.finishExam = async (f)=>{
-            const hasDoubt=Object.values(state.doubts).some(v=>v); if(hasDoubt) return Swal.fire('Info','Masih ada ragu-ragu','warning');
-            const totQ=state.examData.questions.length; const ansQ=state.examData.questions.reduce((c,q,i)=>{ const a=state.answers[i]; return (q.type==='Matching'?(a&&Object.keys(a).length>0):(a!==undefined&&a!==null&&a!==''))?c+1:c; },0);
-            if(ansQ<totQ) return Swal.fire('Info',`Baru dijawab ${ansQ} dari ${totQ}`,'warning');
-            if(!f && !(await Swal.fire({title:'Selesai?',icon:'question',showCancelButton:true})).isConfirmed) return;
-            clearInterval(state.timerInterval);
-            let sc=0, tot=0; let stats={PG:{correct:0,wrong:0},TrueFalse:{correct:0,wrong:0},Matching:{correct:0,wrong:0},Essay:{count:0}};
-            state.examData.questions.forEach((q,i)=>{
-                const pts=parseInt(q.points)||10; tot+=pts; const ans=state.answers[i];
-                if(q.type==='Essay') stats.Essay.count++;
-                else if(q.type==='Matching'){
-                    let c=0; if(ans) Object.entries(ans).forEach(([l,r])=>{ const p=q.pairs.find(x=>x.left===l); if(p&&p.right===r) c++; });
-                    if(c>0) sc+=(c/q.pairs.length)*pts;
-                    if(c===q.pairs.length) stats.Matching.correct++; else stats.Matching.wrong++;
-                } else {
-                    if(ans===q.key){ sc+=pts; if(q.type==='PG') stats.PG.correct++; else stats.TrueFalse.correct++; }
-                    else { if(q.type==='PG') stats.PG.wrong++; else stats.TrueFalse.wrong++; }
-                }
-            });
-            // Calc Duration
-            const endTime = new Date();
-            const durationMs = endTime - state.startTime;
-            const mins = Math.floor(durationMs / 60000);
-            const secs = Math.floor((durationMs % 60000) / 1000);
-            const durationStr = `${mins}m ${secs}s`;
-
-            await addDoc(collection(db,"results"),{ name:state.user.name,class:state.user.class,subject:state.examData.subject,score:Math.round((sc/tot)*100),stats,answers:state.answers,questions:state.examData.questions,cheatCount:state.cheatCount||0,duration:durationStr,timestamp:serverTimestamp() });
-            Swal.fire('Sukses','Nilai Tersimpan','success').then(()=>location.reload());
-        };
-        window.loginAdmin = async ()=>{ if($('a-u').value==='admin'&&$('a-p').value==='12345#'){ await signInAnonymously(auth); state.user={role:'admin'}; renderAdminDashboard(); } else Swal.fire('Error','Login Gagal','error'); };
-        
-        window.loadResults = async (c)=>{ 
-            c.innerHTML='Loading...'; 
-            const s=await getDocs(query(collection(db,"results"))); 
-            window.allResData=s.docs.map(d=>({id:d.id,...d.data()})); 
-            c.innerHTML=`<div class="bg-white p-6 rounded shadow h-full flex flex-col"><div class="flex justify-between mb-4"><h2 class="font-bold">Hasil</h2><select id="res-filter" onchange="window.filterRes()" class="border p-2 rounded"><option value="ALL">Semua</option>${generateClassOptions()}</select></div><div class="flex-1 overflow-auto"><table class="w-full text-left"><thead class="bg-gray-100"><tr><th class="p-3">Nama</th><th class="p-3">Kls</th><th class="p-3">Mapel</th><th class="p-3">Nilai</th><th class="p-3">Waktu</th><th class="p-3">Aksi</th></tr></thead><tbody id="res-tbody"></tbody></table></div></div>`; 
-            window.filterRes(); 
-        };
-
-        window.filterRes = ()=>{ 
-            const f=$('res-filter').value; 
-            const d=window.allResData.filter(r=>f==='ALL'||r.class===f); 
-            $('res-tbody').innerHTML=d.map(r=>`<tr><td class="p-3">${r.name}</td><td class="p-3">${r.class}</td><td class="p-3">${r.subject||'-'}</td><td class="p-3 font-bold">${r.score}</td><td class="p-3 text-xs text-gray-500">${r.duration||'-'}</td><td class="p-3"><button onclick="window.showDetail('${r.id}')" class="text-blue-500 mr-2"><i class="fas fa-eye"></i></button><button onclick="window.delRes('${r.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); 
-        };
-        
-        // --- MODIFIED: DETAIL POPUP (STATISTIK MODERN 20/30) ---
-        window.showDetail = (id) => {
-            const r = window.allResData.find(x => x.id === id);
-            if (!r || !r.questions) return Swal.fire('Info', 'Detail soal tidak tersedia untuk data lama.', 'info');
-            const s = r.stats;
-            
-            // Hitung Benar/Total
-            const pgCorrect = s.PG?.correct || 0;
-            const pgTotal = (s.PG?.correct || 0) + (s.PG?.wrong || 0);
-            
-            const tfCorrect = s.TrueFalse?.correct || 0;
-            const tfTotal = (s.TrueFalse?.correct || 0) + (s.TrueFalse?.wrong || 0);
-            
-            let matchPairsCorrect = 0;
-            let matchPairsTotal = 0;
-            
-            // Hitung ulang pair detail dari data
-            r.questions.forEach((q, idx) => {
-                if(q.type === 'Matching') {
-                    matchPairsTotal += q.pairs.length;
-                    const ans = r.answers ? r.answers[idx] : null;
-                    if(ans) {
-                        Object.entries(ans).forEach(([l, right]) => {
-                            const p = q.pairs.find(x => x.left === l);
-                            if(p && p.right === right) matchPairsCorrect++;
-                        });
-                    }
-                }
-            });
-
-            // Essay List
-            let essayHtml = '';
-            if (r.questions && r.answers) {
-                essayHtml = r.questions.map((q, idx) => {
-                    if (q.type === 'Essay') {
-                        const ans = r.answers[idx] || '<i>Tidak dijawab</i>';
-                        return `<div class="bg-gray-50 p-4 rounded border mb-3"><div class="font-bold text-xs text-blue-600 mb-2">Soal No. ${idx + 1} (Essay)</div><div class="text-sm font-medium text-gray-800 mb-2">${q.text}</div><div class="text-xs font-bold text-gray-500 mb-1">Jawaban Siswa:</div><div class="bg-white p-3 border rounded text-sm text-gray-700 whitespace-pre-wrap shadow-sm">${ans}</div></div>`;
-                    }
-                    return '';
-                }).join('');
-                if (!essayHtml.trim()) essayHtml = '<div class="text-center text-gray-400 text-sm py-4">Tidak ada soal essay.</div>';
-            }
-
-            // Modern Dashboard Stats HTML (Simplified 20/30 format)
-            const statsHtml = `
-            <div class="grid grid-cols-1 gap-4 mb-4">
-                <!-- PG Card -->
-                <div class="bg-white p-4 rounded-xl border border-blue-100 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded-full flex items-center justify-center"><i class="fas fa-list-ul"></i></div>
-                        <div>
-                            <div class="text-xs font-bold text-gray-400 uppercase">Pilihan Ganda</div>
-                            <div class="text-sm font-bold text-gray-700">Benar ${pgCorrect} / ${pgTotal} Soal</div>
-                        </div>
-                    </div>
-                    <div class="text-xl font-black text-blue-600">${Math.round((pgCorrect/pgTotal)*100) || 0}%</div>
-                </div>
-
-                <!-- TF Card -->
-                <div class="bg-white p-4 rounded-xl border border-green-100 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-green-100 text-green-600 w-10 h-10 rounded-full flex items-center justify-center"><i class="fas fa-check-square"></i></div>
-                        <div>
-                            <div class="text-xs font-bold text-gray-400 uppercase">Benar/Salah</div>
-                            <div class="text-sm font-bold text-gray-700">Benar ${tfCorrect} / ${tfTotal} Soal</div>
-                        </div>
-                    </div>
-                    <div class="text-xl font-black text-green-600">${Math.round((tfCorrect/tfTotal)*100) || 0}%</div>
-                </div>
-
-                <!-- Matching Card -->
-                <div class="bg-white p-4 rounded-xl border border-purple-100 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-purple-100 text-purple-600 w-10 h-10 rounded-full flex items-center justify-center"><i class="fas fa-random"></i></div>
-                        <div>
-                            <div class="text-xs font-bold text-gray-400 uppercase">Matching (Pasangan)</div>
-                            <div class="text-sm font-bold text-gray-700">Benar ${matchPairsCorrect} / ${matchPairsTotal} Pasangan</div>
-                        </div>
-                    </div>
-                    <div class="text-xl font-black text-purple-600">${Math.round((matchPairsCorrect/matchPairsTotal)*100) || 0}%</div>
+    <!-- SIDEBAR -->
+    <aside :class="['fixed md:static inset-y-0 left-0 z-40 w-64 bg-[#1e1e2d] text-white flex flex-col flex-shrink-0 transition-transform duration-300 md:translate-x-0', mobileMenuOpen ? 'translate-x-0' : '-translate-x-full', sidebarCollapsed ? 'md:w-20' : 'md:w-64']">
+        <div class="h-20 flex items-center justify-center border-b border-gray-700"><div class="flex items-center gap-3"><i class="fa-solid fa-graduation-cap text-[#d4f049] text-3xl animate-bounce"></i><span v-if="!sidebarCollapsed" class="text-xl font-bold tracking-wide">Edu<span class="text-[#d4f049]">Admin</span></span></div></div>
+        <div class="p-6 flex flex-col items-center border-b border-gray-700" v-if="!sidebarCollapsed">
+            <div class="w-16 h-16 rounded-full bg-gray-600 overflow-hidden mb-3 border-2 border-[#d4f049]"><img :src="profile.avatar || 'https://ui-avatars.com/api/?name=' + (profile.name || 'G') + '&background=d4f049&color=1e1e2d'" alt="Profile" class="w-full h-full object-cover"></div>
+            <h3 class="font-semibold text-lg text-center leading-tight">{{ profile.name }}</h3><p class="text-gray-400 text-xs mt-1">Guru Bahasa Inggris</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+            <a href="#" @click.prevent="navigate('dashboard')" :class="['nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-300', currentView === 'dashboard' ? 'active' : '']"><i class="fa-solid fa-border-all text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Dashboard</span></a>
+            <a href="#" @click.prevent="navigate('absensi')" :class="['nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-300', currentView === 'absensi' ? 'active' : '']"><i class="fa-solid fa-calendar-check text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Absensi Siswa</span></a>
+            <a href="#" @click.prevent="navigate('vocabulary')" :class="['nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-300', currentView === 'vocabulary' ? 'active' : '']"><i class="fa-solid fa-language text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Vocabulary</span></a>
+            <div class="relative">
+                <button @click="showGradingMenu = !showGradingMenu" :class="['w-full nav-item flex items-center justify-between px-4 py-3 rounded-xl transition-colors text-gray-300', ['tugas','ulangan','psas','psat'].includes(currentView) ? 'active' : '']">
+                    <div class="flex items-center gap-3"><i class="fa-solid fa-pen-to-square text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Penilaian</span></div><i v-if="!sidebarCollapsed" class="fa-solid fa-chevron-down text-xs transition-transform" :class="{'rotate-180': showGradingMenu}"></i>
+                </button>
+                <div v-if="showGradingMenu && !sidebarCollapsed" class="ml-10 mt-1 space-y-1">
+                    <a href="#" @click="navigate('tugas')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Nilai Tugas</a>
+                    <a href="#" @click="navigate('ulangan')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Nilai Ulangan</a>
+                    <a href="#" @click="navigate('psas')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Nilai PSAS</a>
+                    <a href="#" @click="navigate('psat')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Nilai PSAT</a>
                 </div>
             </div>
-            `;
+            <a href="#" @click.prevent="navigate('pengaturan')" :class="['nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-300', currentView === 'pengaturan' ? 'active' : '']"><i class="fa-solid fa-gear text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Pengaturan</span></a>
+        </nav>
+        <div class="p-4 border-t border-gray-700 hidden md:block"><button @click="sidebarCollapsed = !sidebarCollapsed" class="w-full flex items-center justify-center p-2 rounded hover:bg-gray-700 text-gray-400"><i :class="sidebarCollapsed ? 'fa-solid fa-right-from-bracket' : 'fa-solid fa-left-long'"></i></button></div>
+    </aside>
 
-            // Tabs HTML
-            const tabs = `
-                <div class="flex gap-2 mb-4 border-b">
-                    <button onclick="window.showTab('stats')" class="px-4 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600" id="tab-btn-stats">Ringkasan</button>
-                    <button onclick="window.showTab('essay')" class="px-4 py-2 text-sm font-bold text-gray-500 hover:text-blue-600" id="tab-btn-essay">Essay (${s.Essay?.count||0})</button>
-                    <button onclick="window.showTab('cheat')" class="px-4 py-2 text-sm font-bold text-red-500 hover:text-red-700" id="tab-btn-cheat">Keamanan</button>
+    <!-- CONTENT -->
+    <main class="flex-1 flex flex-col bg-[#f8f9fc] overflow-hidden w-full">
+        <header class="h-20 bg-white shadow-sm flex items-center justify-between px-4 md:px-8 z-10 flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <button @click.stop="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-gray-600 focus:outline-none"><i class="fa-solid fa-bars text-2xl"></i></button>
+                <div class="header-title-box">
+                    <!-- FIXED: Header Title Multi-line -->
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 capitalize header-title-mobile">{{ pageTitle }}</h1>
+                    <p class="text-[10px] md:text-xs text-gray-500 hidden md:block">Administrasi Bahasa Inggris • {{ currentDate }}</p>
                 </div>
-            `;
+            </div>
+            <div class="flex items-center gap-3 md:gap-6">
+                <div class="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full border border-gray-200"><i class="fa-solid fa-filter text-gray-500 text-xs"></i><select v-model="selectedClass" class="bg-transparent text-xs md:text-sm font-semibold text-gray-700 outline-none cursor-pointer"><option value="all">Semua</option><option v-for="cls in uniqueClasses" :key="cls" :value="cls">{{ cls }}</option></select></div>
+                <div class="relative" id="notif-container">
+                    <button @click.stop="showNotifs = !showNotifs" class="relative w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition"><i class="fa-regular fa-bell text-gray-600"></i><span v-if="notifications.length > 0" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span></button>
+                    <div v-if="showNotifs" class="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden" @click.stop>
+                        <div class="bg-[#1e1e2d] px-4 py-3 text-white text-xs font-bold flex justify-between"><span>Notifikasi</span><button @click="notifications = []; showNotifs = false" class="text-gray-400 hover:text-white">Clear</button></div>
+                        <div class="max-h-64 overflow-y-auto"><div v-for="(notif, idx) in notifications" :key="idx" class="px-4 py-3 border-b border-gray-50 text-xs hover:bg-gray-50 flex gap-3"><div class="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></div><div><p class="text-gray-800 font-medium">{{ notif.text }}</p><p class="text-gray-400 text-[10px]">{{ notif.time }}</p></div></div></div>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-            Swal.fire({
-                title: `<div class="text-left pb-2 border-b"><div class="text-lg font-bold">${r.name}</div><div class="text-xs font-normal text-gray-500">${r.class} &bull; ${r.subject || '-'}</div></div>`,
-                html: `
-                <div class="text-left" style="height:500px;overflow-y:auto">
-                    ${r.cheatCount > 0 ? `<div class="bg-red-50 text-red-600 px-4 py-2 rounded mb-4 text-sm font-bold flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i> Terdeteksi ${r.cheatCount}x Kecurangan</div>` : ''}
-                    ${tabs}
-                    <div id="tab-content-stats">
-                        <div class="text-center py-8 bg-gray-900 rounded-xl mb-6 text-white shadow-lg relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
-                            <span class="text-xs font-bold uppercase tracking-[0.2em] opacity-75">NILAI AKHIR</span>
-                            <div class="text-7xl font-black mt-2 tracking-tighter">${r.score}</div>
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 relative page-content-mobile">
+            <!-- DASHBOARD -->
+            <div v-if="currentView === 'dashboard'" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex justify-between items-start"><div><p class="text-gray-500 text-sm font-medium mb-1">Total Siswa</p><h3 class="text-3xl font-bold text-gray-800 card-title-mobile">{{ stats.total }}</h3></div><div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center"><i class="fa-solid fa-users text-blue-500"></i></div></div><div class="mt-4 flex gap-4 text-xs font-medium"><span class="text-blue-600 bg-blue-50 px-2 py-1 rounded">L: {{ stats.male }}</span><span class="text-pink-600 bg-pink-50 px-2 py-1 rounded">P: {{ stats.female }}</span></div></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex justify-between items-start"><div><p class="text-gray-500 text-sm font-medium mb-1">Kehadiran</p><h3 class="text-3xl font-bold text-gray-800 card-title-mobile">{{ stats.attendanceRate }}%</h3></div><div class="w-10 h-10 rounded-full bg-[#d4f049] flex items-center justify-center"><i class="fa-solid fa-check text-green-800"></i></div></div><p class="text-xs text-gray-400 mt-4">Minggu Ini</p></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex justify-between items-start"><div><p class="text-gray-500 text-sm font-medium mb-1">Total Alpha</p><h3 class="text-3xl font-bold text-gray-800 card-title-mobile">{{ stats.totalAlpha }}</h3></div><div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center"><i class="fa-solid fa-user-xmark text-red-500"></i></div></div><p class="text-xs text-gray-400 mt-4">Perlu tindak lanjut</p></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex justify-between items-start"><div><p class="text-gray-500 text-sm font-medium mb-1">Avg Vocab</p><h3 class="text-3xl font-bold text-gray-800 card-title-mobile">{{ Math.round(stats.avgVocab) }}</h3></div><div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center"><i class="fa-solid fa-book text-purple-500"></i></div></div><div class="w-full bg-gray-200 rounded-full h-1.5 mt-4"><div class="bg-purple-500 h-1.5 rounded-full" :style="`width: ${stats.avgVocab}%`"></div></div></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col"><h4 class="font-bold text-gray-800 mb-4 card-title-mobile">Grafik Kehadiran vs Alpha</h4><div class="flex-1 min-h-[250px] relative"><canvas id="attendanceChart"></canvas></div></div>
+                    <div class="bg-[#1e1e2d] text-white p-5 rounded-2xl shadow-lg border border-gray-700 flex flex-col h-full max-h-[360px]">
+                        <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2"><h4 class="font-bold text-[#d4f049] text-base card-title-mobile">5 Siswa Sering Alpha</h4><i class="fa-solid fa-chart-pie text-gray-500 text-sm"></i></div>
+                        <div class="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar-dark">
+                             <div v-for="(student, idx) in stats.topAlphaStudents" :key="idx" class="flex justify-between items-center bg-gray-800/50 p-2 rounded-lg border border-gray-700 hover:bg-gray-800 transition">
+                                <div class="flex items-center gap-2.5"><div class="text-[10px] text-gray-500 font-mono w-3">{{ idx + 1 }}</div><div class="overflow-hidden"><p class="font-bold text-xs text-white truncate w-28">{{ student.name }}</p><p class="text-[9px] text-[#d4f049]">{{ student.class }}</p></div></div>
+                                <div class="flex items-center gap-2"><div class="text-right"><p class="font-bold text-sm text-white leading-none">{{ student.count }}x</p></div><div class="progress-circle" :style="`--percent: ${Math.min((student.count / 10) * 100, 100)}`"><div class="progress-content">{{ student.count }}</div></div></div>
+                             </div>
+                             <div v-if="stats.topAlphaStudents.length === 0" class="flex flex-col items-center justify-center h-full text-gray-500 text-xs py-4"><i class="fa-solid fa-thumbs-up text-xl mb-1 text-[#d4f049]"></i>Rajin Semua!</div>
                         </div>
-                        ${statsHtml}
                     </div>
-                    <div id="tab-content-essay" class="hidden">${essayHtml}</div>
-                    <div id="tab-content-cheat" class="hidden">
-                         <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded mb-4">
-                            <h3 class="font-bold text-red-800 text-lg mb-2"><i class="fas fa-shield-alt"></i> Log Keamanan</h3>
-                            <p class="text-sm text-red-700 mb-4">Sistem mencatat setiap kali siswa meninggalkan halaman ujian (minimize browser, pindah tab, atau buka aplikasi lain).</p>
-                            <div class="flex items-center justify-between bg-white p-4 rounded border border-red-100">
-                                <span class="font-bold text-gray-600">Total Pelanggaran</span>
-                                <span class="text-3xl font-black text-red-600">${r.cheatCount || 0}</span>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4"><h4 class="font-bold text-gray-800 card-title-mobile">Kalender Pendidikan</h4><span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">{{ currentMonthName }}</span></div>
+                        <div class="grid grid-cols-7 gap-1 text-center text-sm mb-4"><div class="text-gray-400 text-xs">M</div><div class="text-gray-400 text-xs">S</div><div class="text-gray-400 text-xs">S</div><div class="text-gray-400 text-xs">R</div><div class="text-gray-400 text-xs">K</div><div class="text-gray-400 text-xs">J</div><div class="text-gray-400 text-xs">S</div><div v-for="d in calendarDays" :key="d.date" class="aspect-square flex items-center justify-center rounded-lg text-xs font-medium cursor-pointer transition hover:bg-gray-50" :class="[d.isToday ? 'bg-[#d4f049] text-black font-bold' : '', d.isRedDate ? 'text-red-500 font-bold bg-red-50' : 'text-gray-700']">{{ d.day }}</div></div>
+                        <div class="space-y-2"><div v-for="evt in redDates" :key="evt.date" class="flex gap-3 text-xs bg-red-50 p-2 rounded-lg items-start"><div class="font-bold text-red-500 min-w-[24px]">{{ evt.day }}</div><div class="text-red-700">{{ evt.desc }}</div></div></div>
+                    </div>
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4 flex-wrap gap-2"><h4 class="font-bold text-gray-800 card-title-mobile">Jadwal Mengajar</h4>
+                            <!-- FIXED: Mobile Schedule Menu Layout -->
+                            <div class="flex gap-2 schedule-menu-container">
+                                <button v-for="day in ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']" @click="selectedScheduleDay = day" :class="['px-3 py-1 text-xs rounded-full transition schedule-btn', selectedScheduleDay === day ? 'bg-[#1e1e2d] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']">{{ day.substring(0,3) }}</button>
                             </div>
-                         </div>
+                        </div>
+                        <div class="overflow-hidden rounded-xl border border-gray-100">
+                            <table class="w-full text-sm text-left table-mobile"><thead class="bg-gray-50 text-gray-500 uppercase text-xs"><tr><th class="px-6 py-3">Jam</th><th class="px-6 py-3">Kelas</th><th class="px-6 py-3">Materi</th><th class="px-6 py-3 text-right">Aksi</th></tr></thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    <tr v-for="(slot, index) in currentDaySchedule" :key="index" class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">{{ slot.time }}</td><td class="px-6 py-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">{{ slot.class }}</span></td><td class="px-6 py-4 text-gray-600">{{ slot.subject }}</td><td class="px-6 py-4 text-right"><button @click="deleteSchedule(slot)" class="text-gray-400 hover:text-red-500 mr-2"><i class="fa-solid fa-trash"></i></button><button @click="openEditSchedule(slot)" class="text-gray-400 hover:text-blue-500"><i class="fa-solid fa-pen"></i></button></td></tr>
+                                    <tr v-if="currentDaySchedule.length === 0"><td colspan="4" class="px-6 py-8 text-center text-gray-400">Tidak ada jadwal.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button @click="addScheduleSlot" class="mt-4 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-[#d4f049] hover:text-[#d4f049] hover:bg-lime-50 transition text-sm font-medium"><i class="fa-solid fa-plus mr-2"></i> Tambah Jadwal</button>
                     </div>
-                </div>`,
-                width: '650px',
-                showConfirmButton: true,
-                confirmButtonText: 'Tutup',
-                confirmButtonColor: '#1e293b'
-            });
-        };
+                </div>
+            </div>
 
-        window.showTab = (name) => {
-            const tabs = ['stats', 'essay', 'cheat'];
-            tabs.forEach(t => {
-                const el = document.getElementById('tab-content-' + t);
-                if (el) el.classList.add('hidden');
-                const btn = document.getElementById('tab-btn-' + t);
-                if (btn) {
-                    btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
-                    btn.classList.add('text-gray-500');
-                }
-            });
-            const target = document.getElementById('tab-content-' + name);
-            if (target) target.classList.remove('hidden');
-            const activeBtn = document.getElementById('tab-btn-' + name);
-            if(activeBtn) {
-                activeBtn.classList.remove('text-gray-500');
-                activeBtn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            <!-- ABSENSI -->
+            <div v-if="currentView === 'absensi'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex flex-col md:flex-row items-center gap-4 w-full">
+                        <div class="relative w-full md:w-auto"><input type="date" v-model="attendanceDate" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#d4f049]"><i class="fa-regular fa-calendar absolute left-3 top-3.5 text-gray-400"></i></div>
+                        <div class="grid grid-cols-4 gap-3 w-full md:w-auto flex-1">
+                             <div class="stats-card-absensi p-3 rounded-xl bg-green-50 border border-green-100 text-center shadow-sm"><p class="text-[10px] text-green-600 font-bold uppercase tracking-wider">Hadir</p><p class="text-2xl font-bold text-green-800">{{ countAttendance('H') }}</p></div>
+                             <div class="stats-card-absensi p-3 rounded-xl bg-blue-50 border border-blue-100 text-center shadow-sm"><p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Izin</p><p class="text-2xl font-bold text-blue-800">{{ countAttendance('I') }}</p></div>
+                             <div class="stats-card-absensi p-3 rounded-xl bg-yellow-50 border border-yellow-100 text-center shadow-sm"><p class="text-[10px] text-yellow-600 font-bold uppercase tracking-wider">Sakit</p><p class="text-2xl font-bold text-yellow-800">{{ countAttendance('S') }}</p></div>
+                             <div class="stats-card-absensi p-3 rounded-xl bg-red-50 border border-red-100 text-center shadow-sm"><p class="text-[10px] text-red-600 font-bold uppercase tracking-wider">Alpha</p><p class="text-2xl font-bold text-red-800">{{ countAttendance('A') }}</p></div>
+                        </div>
+                    </div>
+                    <button @click="saveAttendance" class="w-full md:w-auto bg-[#1e1e2d] hover:bg-gray-800 text-white px-8 py-3 rounded-xl text-sm font-bold transition shadow-lg shadow-gray-300/50 flex justify-center items-center gap-2 btn-mobile"><i class="fa-solid fa-save"></i> Simpan</button>
+                </div>
+                <!-- FIXED: Compacted Table Content -->
+                <div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-mobile table-compact-mobile"><thead class="bg-gray-50 uppercase text-xs font-bold text-gray-700"><tr><th class="px-6 py-4">Nama</th><th class="px-6 py-4">Kelas</th><th class="px-6 py-4 text-center">Absensi</th></tr></thead><tbody class="divide-y divide-gray-100"><tr v-for="(student, index) in filteredStudents" :key="student.id" class="hover:bg-gray-50 transition"><td class="px-6 py-4 font-medium text-gray-900 col-name">{{ student.name }}</td><td class="px-6 py-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs">{{ student.class }}</span></td><td class="px-6 py-4 text-center"><div class="inline-flex bg-gray-100 rounded-lg p-1"><button v-for="status in ['H','I','S','A']" @click="setAttendance(student.id, status)" :class="['w-10 h-10 btn-icon-mobile rounded-lg text-xs font-bold transition', getAttendance(student.id) === status ? (status==='H'?'bg-green-500 text-white shadow-lg shadow-green-200': status==='I'?'bg-blue-500 text-white': status==='S'?'bg-yellow-500 text-white':'bg-red-500 text-white') : 'text-gray-500 hover:bg-white']">{{ status }}</button></div></td></tr></tbody></table></div>
+            </div>
+
+            <!-- VOCABULARY -->
+            <div v-if="currentView === 'vocabulary'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center"><h3 class="font-bold text-lg card-title-mobile">Target 100 Vocabulary</h3></div>
+                 <!-- FIXED: Compacted Table Content -->
+                 <div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-mobile table-compact-mobile"><thead class="bg-gray-50 uppercase text-xs font-bold text-gray-700"><tr><th class="px-6 py-4">Nama</th><th class="px-6 py-4">Kelas</th><th class="px-6 py-4 text-center">Progress</th><th class="px-6 py-4 text-right">Detail</th></tr></thead><tbody class="divide-y divide-gray-100"><tr v-for="student in filteredStudents" :key="student.id" class="hover:bg-gray-50"><td class="px-6 py-4 font-medium col-name">{{ student.name }}</td><td class="px-6 py-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs">{{ student.class }}</span></td><td class="px-6 py-4 text-center"><div class="relative w-full bg-gray-200 rounded-full h-4 overflow-hidden"><div class="bg-purple-500 h-full text-[10px] text-white flex items-center justify-center font-bold" :style="`width: ${getVocabStats(student.id).percent}%`">{{ getVocabStats(student.id).percent }}%</div></div></td><td class="px-6 py-4 text-right"><button @click="openVocabModal(student)" class="text-[#1e1e2d] hover:text-[#d4f049] font-bold text-xs border border-gray-200 px-3 py-1 rounded hover:bg-[#1e1e2d] transition btn-vocab-mobile"><i class="fa-solid fa-list-check mr-1"></i> Cek 100</button></td></tr></tbody></table></div>
+            </div>
+
+            <!-- PENILAIAN -->
+            <div v-if="['tugas', 'ulangan', 'psas', 'psat'].includes(currentView)" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center"><h3 class="font-bold text-lg capitalize card-title-mobile">Input {{ currentView }}</h3><div class="flex gap-2"><button @click="addColumn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-bold transition btn-mobile"><i class="fa-solid fa-plus mr-1"></i> Tambah Kolom</button><button @click="saveGrades" class="bg-[#d4f049] hover:bg-[#c2e035] text-gray-900 px-6 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 btn-mobile"><i class="fa-solid fa-save"></i> Simpan</button></div></div>
+                 <div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-mobile table-compact-mobile"><thead class="bg-gray-50 uppercase text-xs font-bold text-gray-700"><tr><th class="px-6 py-4 sticky left-0 bg-gray-50 z-10">Nama</th><th v-for="col in getGradeColumns()" :key="col.id" class="px-4 py-4 text-center min-w-[120px] group relative"><span @click="renameColumn(col.id, col.name)" class="cursor-pointer hover:underline decoration-dashed">{{ col.name }}</span><button @click="deleteColumn(col.id)" class="absolute top-1 right-1 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-xmark"></i></button></th></tr></thead><tbody class="divide-y divide-gray-100"><tr v-for="student in filteredStudents" :key="student.id" class="hover:bg-gray-50"><td class="px-6 py-4 font-medium sticky left-0 bg-white col-name">{{ student.name }}</td><td v-for="col in getGradeColumns()" :key="col.id" class="px-4 py-4 text-center"><input type="number" min="0" max="100" :value="getGrade(student.id, col.id)" @input="updateGrade(student.id, col.id, $event.target.value)" class="w-full text-center bg-gray-50 border border-gray-200 rounded p-2 focus:border-[#d4f049] focus:outline-none focus:bg-white transition font-bold text-gray-800"></td></tr></tbody></table></div>
+            </div>
+
+            <!-- PENGATURAN -->
+            <div v-if="currentView === 'pengaturan'" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Profile -->
+                    <div class="bg-[#1e1e2d] p-6 rounded-2xl shadow-lg border border-gray-700 relative overflow-hidden flex flex-col h-full">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-[#d4f049] rounded-full opacity-10 blur-2xl"></div>
+                        <div class="flex items-center justify-between mb-6 border-b border-gray-700 pb-4">
+                            <div class="flex items-center gap-4"><div class="w-12 h-12 rounded-full border-2 border-[#d4f049] flex items-center justify-center bg-gray-800 overflow-hidden"><img v-if="profile.avatar" :src="profile.avatar" class="w-full h-full object-cover"><i v-else class="fa-solid fa-user text-[#d4f049] text-xl"></i></div><div><h3 class="font-bold text-lg text-white card-title-mobile">Edit Profil</h3><p class="text-xs text-gray-400">Update informasi</p></div></div>
+                            <button @click="saveProfile" class="bg-[#d4f049] text-[#1e1e2d] px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#cbe63d] transition shadow-lg shadow-lime-900/20 btn-mobile">Simpan</button>
+                        </div>
+                        <div class="space-y-4 flex-1">
+                            <div><label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Nama Lengkap</label><input v-model="profile.name" type="text" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white focus:border-[#d4f049] focus:outline-none transition placeholder-gray-500"></div>
+                            <div><label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Ganti Avatar (Max 500KB)</label><div class="relative"><input type="file" @change="handleAvatarUpload" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#d4f049] file:text-[#1e1e2d] hover:file:bg-[#cbe63d] cursor-pointer"></div><p class="text-[10px] text-gray-500 mt-1">Format: JPG, PNG.</p></div>
+                        </div>
+                    </div>
+                    <!-- Reset -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-red-100 flex flex-col h-full justify-between">
+                        <div><div class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-2"><div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center"><i class="fa-solid fa-database text-red-500"></i></div><h3 class="font-bold text-lg text-gray-800 card-title-mobile">Reset Database</h3></div><p class="text-sm text-gray-500 mb-4 leading-relaxed">Tindakan ini akan menghapus semua data nilai, absensi, dan progress vocabulary secara permanen. <br><br> <strong>Catatan:</strong> Data siswa tidak akan terhapus.</p></div>
+                        <button @click="resetActivities" class="w-full bg-red-50 text-red-600 hover:bg-red-100 px-6 py-3 rounded-lg text-sm font-bold border border-red-200 transition flex justify-center items-center gap-2 mt-4 btn-mobile"><i class="fa-solid fa-triangle-exclamation"></i> Reset Sekarang</button>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2 flex-wrap gap-2"><h3 class="font-bold text-lg text-gray-800 card-title-mobile">Manajemen Siswa</h3><div class="flex gap-2"><button @click="deleteSelectedStudents" v-if="selectedStudentsForDeletion.length > 0" class="bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 transition btn-mobile">Hapus ({{ selectedStudentsForDeletion.length }})</button><button @click="showBulkImportModal = true" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition btn-mobile"><i class="fa-solid fa-file-excel mr-1"></i> Import</button><button @click="showAddStudentModal = true" class="bg-[#1e1e2d] text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-800 transition btn-mobile"><i class="fa-solid fa-plus mr-1"></i> Tambah</button></div></div>
+                    <div class="overflow-x-auto max-h-96 overflow-y-auto"><table class="w-full text-sm text-left table-mobile table-compact-mobile"><thead class="bg-gray-50 sticky top-0"><tr><th class="px-4 py-2 w-10"><input type="checkbox" @change="toggleAllSelection($event)"></th><th class="px-4 py-2">NISN</th><th class="px-4 py-2">Nama</th><th class="px-4 py-2">Kelas</th><th class="px-4 py-2 text-right">Aksi</th></tr></thead><tbody><tr v-for="student in students" :key="student.id" class="border-b border-gray-50 hover:bg-gray-50"><td class="px-4 py-2"><input type="checkbox" :value="student.id" v-model="selectedStudentsForDeletion"></td><td class="px-4 py-2 font-mono text-xs">{{ student.nisn }}</td><td class="px-4 py-2 col-name">{{ student.name }}</td><td class="px-4 py-2"><span class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">{{ student.class }}</span></td><td class="px-4 py-2 text-right"><button @click="deleteStudent(student.id)" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></td></tr></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- Modals for Student Management (UPDATED) -->
+            <div v-if="showAddStudentModal" class="fixed inset-0 bg-black bg-opacity-50 z-[90] flex items-center justify-center p-4">
+                <div class="bg-white p-6 rounded-xl w-full max-w-md transform transition-all">
+                    <h4 class="font-bold mb-4 text-lg text-gray-800 border-b pb-2">Tambah Siswa Baru</h4>
+                    <div class="space-y-3 mb-6">
+                        <input v-model="newStudent.nipd" placeholder="NIPD" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]">
+                        <input v-model="newStudent.nisn" placeholder="NISN" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]">
+                        <input v-model="newStudent.name" placeholder="Nama Siswa" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]">
+                        <select v-model="newStudent.gender" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]">
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                        <input v-model="newStudent.class" placeholder="Kelas (ex: X-A)" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]">
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button @click="showAddStudentModal=false" class="text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-100 text-sm">Batal</button>
+                        <button @click="addNewStudent" class="bg-[#d4f049] text-[#1e1e2d] px-6 py-2 rounded-lg font-bold text-sm hover:bg-[#cbe63d] shadow-md">Simpan</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div v-if="showBulkImportModal" class="fixed inset-0 bg-black bg-opacity-50 z-[90] flex items-center justify-center p-4"><div class="bg-white p-6 rounded-xl w-full max-w-lg"><h4 class="font-bold mb-2">Import Excel</h4><textarea v-model="bulkImportText" class="w-full border p-2 text-xs h-40 mb-4" placeholder="Paste data here..."></textarea><div class="flex justify-end gap-2"><button @click="showBulkImportModal=false" class="text-gray-500">Batal</button><button @click="processBulkImport" class="bg-green-600 text-white px-4 py-2 rounded font-bold">Import</button></div></div></div>
+
+        </div>
+    </main>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    const firebaseConfig = { apiKey: "AIzaSyDPpYq9uusSZRBhXHVi9Bkn8cFPs_a53E8", authDomain: "adminsitrasi-guru.firebaseapp.com", projectId: "adminsitrasi-guru", storageBucket: "adminsitrasi-guru.firebasestorage.app", messagingSenderId: "682401615954", appId: "1:682401615954:web:5d9a59df07a9dee8c34f8b", measurementId: "G-9KVQ5VFDTP" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const appId = "adminsitrasi-guru-v1"; 
+
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                loading: true, mobileMenuOpen: false, sidebarCollapsed: false, currentView: 'dashboard', selectedClass: 'all', attendanceDate: new Date().toISOString().split('T')[0], showGradingMenu: false,
+                showEditScheduleModal: false, editingScheduleSlot: {}, showRenameColumnModal: false, editingColumn: { id: '', name: '' }, modal: { show: false, title: '', message: '', type: 'info', isConfirm: false, resolve: null }, notifications: [], showNotifs: false, showAddStudentModal: false, showBulkImportModal: false, showVocabModal: false, selectedVocabStudent: {},
+                profile: { name: 'Admin Guru', avatar: '' }, students: [], attendanceData: {}, vocabData: {}, gradesData: {}, schedules: [], 
+                dashboardStats: { attendanceRate: 0, totalAlpha: 0, topAlphaStudents: [], chartLabels: [], chartHadir: [], chartAlpha: [] },
+                newStudent: { nipd: '', nisn: '', name: '', gender: 'L', class: '' }, // UPDATED: Added NIPD
+                selectedStudentsForDeletion: [], selectedScheduleDay: 'Senin', bulkImportText: '', barChartInstance: null, user: null
             }
-        };
+        },
+        computed: {
+            pageTitle() { const map = { 'dashboard': 'Dashboard', 'absensi': 'Absensi Siswa', 'vocabulary': 'Vocabulary Tracker', 'tugas': 'Nilai Tugas', 'ulangan': 'Nilai Ulangan', 'psas': 'Nilai PSAS', 'psat': 'Nilai PSAT', 'pengaturan': 'Pengaturan' }; return map[this.currentView] || 'Aplikasi Guru'; },
+            currentDate() { return new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); },
+            uniqueClasses() { return [...new Set(this.students.map(s => s.class))].sort(); },
+            filteredStudents() { if (this.selectedClass === 'all') return this.students; return this.students.filter(s => s.class === this.selectedClass); },
+            currentMonthName() { return new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' }); },
+            calendarDays() { const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const daysInMonth = new Date(year, month + 1, 0).getDate(); const firstDay = new Date(year, month, 1).getDay(); let days = []; for(let i=0; i<firstDay; i++) days.push({ date: `pad-${i}`, day: '' }); for(let i=1; i<=daysInMonth; i++) days.push({ date: `${year}-${month+1}-${i}`, day: i, isToday: i === now.getDate(), isRedDate: new Date(year,month,i).getDay()===0 || this.isRedDate(i) }); return days; },
+            redDates() { return [{ day: 25, desc: 'Hari Guru', date: '2023-11-25' }]; },
+            currentDaySchedule() { return this.schedules.filter(s => s.day === this.selectedScheduleDay).sort((a,b) => a.time.localeCompare(b.time)); },
+            stats() { const total = this.filteredStudents.length; const male = this.filteredStudents.filter(s => s.gender === 'L').length; const female = this.filteredStudents.filter(s => s.gender === 'P').length; let totalPercent = 0; this.filteredStudents.forEach(s => { totalPercent += this.getVocabStats(s.id).percent; }); const avgVocab = total > 0 ? (totalPercent / total) : 0; return { total, male, female, avgVocab, attendanceRate: this.dashboardStats.attendanceRate, totalAlpha: this.dashboardStats.totalAlpha, topAlphaStudents: this.dashboardStats.topAlphaStudents }; }
+        },
+        watch: {
+            currentView(newVal) { this.mobileMenuOpen = false; if (newVal === 'dashboard') this.fetchDashboardStats(); else if (newVal === 'absensi') this.fetchAttendanceForDate(this.attendanceDate); },
+            attendanceDate(newDate) { if (this.currentView === 'absensi') this.fetchAttendanceForDate(newDate); },
+            selectedClass() { if (this.currentView === 'dashboard') this.fetchDashboardStats(); }
+        },
+        mounted() { this.initAuth(); document.addEventListener('click', this.closeNotifOnClickOutside); },
+        beforeUnmount() { document.removeEventListener('click', this.closeNotifOnClickOutside); },
+        methods: {
+            navigate(view) { this.currentView = view; },
+            handleGlobalClick(e) { },
+            closeNotifOnClickOutside(e) { const container = document.getElementById('notif-container'); if (container && !container.contains(e.target)) this.showNotifs = false; },
+            handleAvatarUpload(event) { const file = event.target.files[0]; if (!file) return; if (file.size > 500 * 1024) { this.showAlert("File Terlalu Besar", "Maksimal ukuran file adalah 500KB.", "error"); return; } const reader = new FileReader(); reader.onload = (e) => { this.profile.avatar = e.target.result; this.addNotification("Avatar berhasil diunggah. Klik Simpan."); }; reader.readAsDataURL(file); },
+            showAlert(title, message, type='info') { return new Promise(r => { this.modal = { show: true, title, message, type, isConfirm: false, resolve: r, confirmText: 'OKE' }; }); },
+            showConfirm(title, message) { return new Promise(r => { this.modal = { show: true, title, message, type: 'warning', isConfirm: true, resolve: r, confirmText: 'YA' }; }); },
+            closeModal(result) { this.modal.show = false; if(this.modal.resolve) this.modal.resolve(result); },
+            addNotification(text) { this.notifications.unshift({ text, time: new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) }); },
+            async initAuth() { try { await signInAnonymously(auth); } catch(e) { console.error("Auth failed", e); } onAuthStateChanged(auth, async (user) => { this.user = user; if (user) { try { await Promise.all([this.fetchStudents(), this.fetchVocab(), this.fetchGrades(), this.fetchSchedules(), this.fetchProfile()]); if (this.currentView === 'dashboard') await this.fetchDashboardStats(); } catch(e) {} this.loading = false; } else { this.loading = false; } }); },
+            async fetchVocab() { onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'vocabulary', 'main'), s => { if(s.exists()) this.vocabData = s.data(); }); },
+            openVocabModal(student) { this.selectedVocabStudent = student; this.showVocabModal = true; },
+            cycleVocabItem(sid, n) { const sData = this.vocabData[sid] || {}; const current = sData[n]; let next; if (!current) next = 'BL'; else if (current === 'BL') next = 'L'; else next = null; if(!this.vocabData[sid]) this.vocabData[sid] = {}; if(next) this.vocabData[sid][n] = next; else delete this.vocabData[sid][n]; },
+            getVocabClass(sid, n) { const s = this.vocabData[sid]?.[n]; if (s === 'L') return 'status-l'; if (s === 'BL') return 'status-bl'; return ''; },
+            getVocabStats(sid) { const sData = this.vocabData[sid] || {}; let l = 0, bl = 0; Object.values(sData).forEach(v => { if(v==='L') l++; else if(v==='BL') bl++; }); return { l, bl, t: 100 - l - bl, percent: l }; },
+            async saveVocabData() { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'vocabulary', 'main'), this.vocabData); this.addNotification(`Vocab ${this.selectedVocabStudent.name} tersimpan.`); this.showVocabModal = false; },
+            openEditSchedule(slot) { this.editingScheduleSlot = { ...slot, original: slot }; this.showEditScheduleModal = true; },
+            async saveScheduleEdit() { const index = this.schedules.indexOf(this.editingScheduleSlot.original); if (index !== -1) { this.schedules[index].subject = this.editingScheduleSlot.subject; this.schedules[index].time = this.editingScheduleSlot.time; this.schedules[index].class = this.editingScheduleSlot.class; await this.saveSchedulesToDB(); this.addNotification("Jadwal berhasil diperbarui."); this.showEditScheduleModal = false; } },
+            async saveSchedulesToDB() { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'schedules', 'main'), { list: this.schedules }); },
+            addScheduleSlot() { this.schedules.push({ day: this.selectedScheduleDay, time: '08:00 - 09:00', class: 'X', subject: '...' }); this.saveSchedulesToDB(); this.addNotification("Jadwal baru ditambahkan."); },
+            async deleteSchedule(slot) { if(await this.showConfirm("Hapus?", "Jadwal akan dihapus.")) { this.schedules = this.schedules.filter(s => s !== slot); await this.saveSchedulesToDB(); this.addNotification("Jadwal dihapus."); } },
+            getAttendance(sid) { return this.attendanceData[sid] || 'H'; },
+            setAttendance(sid, st) { this.attendanceData[sid] = st; },
+            countAttendance(st) { return this.filteredStudents.filter(s => this.getAttendance(s.id) === st).length; },
+            async saveAttendance() { const dataToSave = { ...this.attendanceData }; this.filteredStudents.forEach(s => { if(!dataToSave[s.id]) dataToSave[s.id] = 'H'; }); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', this.attendanceDate), dataToSave); this.attendanceData = dataToSave; this.showAlert("Sukses", "Data absensi tersimpan.", 'success'); this.addNotification("Absensi disimpan."); },
+            async fetchAttendanceForDate(d) { try { const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', d)); this.attendanceData = snap.exists() ? snap.data() : {}; } catch(e){} },
+            async fetchStudents() { onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'students')), s => { this.students = s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>a.class.localeCompare(b.class)||a.name.localeCompare(b.name)); }); },
+            
+            async addNewStudent() { 
+                if(this.newStudent.name) { 
+                    await setDoc(doc(collection(db, 'artifacts', appId, 'public', 'data', 'students')), {...this.newStudent}); 
+                    this.showAddStudentModal=false; 
+                    this.addNotification(`Siswa ${this.newStudent.name} ditambahkan.`);
+                    this.newStudent={nipd: '', nisn: '', name: '', gender: 'L', class: ''}; 
+                } 
+            },
+            async deleteStudent(id) { if(await this.showConfirm("Hapus?","")) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id)); this.addNotification("Siswa dihapus."); } },
+            async deleteSelectedStudents() { if(await this.showConfirm("Hapus Masal?","")) { const b=writeBatch(db); this.selectedStudentsForDeletion.forEach(id=>b.delete(doc(db, 'artifacts', appId, 'public', 'data', 'students', id))); await b.commit(); this.selectedStudentsForDeletion=[]; this.addNotification("Siswa terpilih dihapus."); } },
+            
+            // --- FIXED GRADING ---
+            async fetchGrades() { 
+                ['tugas','ulangan','psas','psat'].forEach(async t => { 
+                    const s = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'grades', t)); 
+                    // Ensure reactivity
+                    this.gradesData[t] = s.exists() ? s.data() : { columns: [{id:'c1',name:'Nilai 1'}], scores: {} }; 
+                }); 
+            },
+            getGradeColumns() { 
+                if(!this.gradesData[this.currentView]) return [];
+                return this.gradesData[this.currentView].columns || []; 
+            },
+            getGrade(sid, cid) { 
+                if(!this.gradesData[this.currentView] || !this.gradesData[this.currentView].scores) return 0;
+                const scores = this.gradesData[this.currentView].scores[sid];
+                return scores ? (scores[cid] || 0) : 0;
+            },
+            updateGrade(sid, cid, v) { 
+                if(!this.gradesData[this.currentView]) this.gradesData[this.currentView] = { columns: [], scores: {} };
+                const d = this.gradesData[this.currentView]; 
+                if(!d.scores) d.scores={}; 
+                if(!d.scores[sid]) d.scores[sid]={}; 
+                d.scores[sid][cid] = parseInt(v) || 0; // Parse integer or 0
+            },
+            addColumn() { 
+                if(!this.gradesData[this.currentView]) this.gradesData[this.currentView] = { columns: [], scores: {} };
+                if(!this.gradesData[this.currentView].columns) this.gradesData[this.currentView].columns = [];
+                this.gradesData[this.currentView].columns.push({id:'c'+Date.now(), name:'Baru'}); 
+                this.addNotification("Kolom ditambahkan."); 
+            },
+            
+            async saveGrades() { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'grades', this.currentView), this.gradesData[this.currentView]); this.addNotification("Nilai disimpan."); },
+            
+            // NEW: Rename Column Logic with Modal
+            renameColumn(id, old) {
+                this.editingColumn = { id: id, name: old };
+                this.showRenameColumnModal = true;
+            },
+            async saveColumnRename() {
+                if(!this.editingColumn.name) return;
+                const col = this.gradesData[this.currentView].columns.find(c => c.id === this.editingColumn.id);
+                if(col) {
+                    col.name = this.editingColumn.name;
+                    this.addNotification("Nama kolom diubah. Jangan lupa Simpan.");
+                    this.showRenameColumnModal = false;
+                }
+            },
 
-        window.delRes = async (id) => { if((await Swal.fire({title:'Hapus?',icon:'warning',showCancelButton:true})).isConfirmed){ await deleteDoc(doc(db,"results",id)); window.loadAdminPage('results'); }};
-        window.previewExam = () => { if(state.editorQuestions.length){ state.examData={subject:$('ed-subject').value,questions:JSON.parse(JSON.stringify(state.editorQuestions)),level:$('ed-level').value,timeLimit:$('ed-time').value}; state.isPreview=true; state.user={name:"PREVIEW",class:$('ed-level').value}; state.currentQuestionIndex=0; state.answers={}; renderExamPage(); }};
-        window.closePreview = () => { state.isPreview=false; renderAdminDashboard('editor',{resume:true}); };
-        window.insTag = (i, t) => insertTag(`qtext-${i}`,i,t,'text'); window.insTagWacana = (i, t) => insertTag(`qwacana-${i}`,i,t,'wacana');
-        function insertTag(id,i,t,f){ const el=$(id), s=el.selectionStart, e=el.selectionEnd, v=el.value; state.editorQuestions[i][f]=v.substring(0,s)+`<${t}>`+v.substring(s,e)+`</${t}>`+v.substring(e); el.value=state.editorQuestions[i][f]; }
-        window.handleImageUpload = async (inpt,i) => { const fs=Array.from(inpt.files); if(fs.length+(state.editorQuestions[i].images?.length||0)>3) return Swal.fire('Max 3','','error'); const b=await Promise.all(fs.map(f=>fileToBase64(f))); if(!state.editorQuestions[i].images) state.editorQuestions[i].images=[]; state.editorQuestions[i].images.push(...b); renderQList(); };
-        window.delImg = (qi,ii) => { state.editorQuestions[qi].images.splice(ii,1); renderQList(); };
-        window.addQ = (t) => { state.editorQuestions.push({type:t,text:'',wacana:'',points:10,images:[],options:t==='PG'?['','','','','']:[],pairs:t==='Matching'?[{left:'',right:''}]:[],key:t==='TrueFalse'?'True':''}); renderQList(); };
-        window.delQ = (i) => { state.editorQuestions.splice(i,1); renderQList(); };
-        window.updQ = (i,k,v) => state.editorQuestions[i][k]=v; window.updOpt = (i,k,v) => state.editorQuestions[i].options[k]=v;
-        window.addOpt = (i) => { state.editorQuestions[i].options.push(''); renderQList(); }; window.delOpt = (i,k) => { state.editorQuestions[i].options.splice(k,1); renderQList(); };
-        window.setKey = (i,v) => state.editorQuestions[i].key=v;
-        window.addPair = (i) => { state.editorQuestions[i].pairs.push({left:'',right:''}); renderQList(); }; window.delPair = (i,k) => { state.editorQuestions[i].pairs.splice(k,1); renderQList(); }; window.updPair = (i,k,s,v) => state.editorQuestions[i].pairs[k][s]=v;
-        window.clearAllQ = async () => { if((await Swal.fire({title:'Hapus Semua?',icon:'warning',showCancelButton:true})).isConfirmed){ state.editorQuestions=[]; renderQList(); }};
-        window.saveToDB = async () => { const s=$('ed-subject').value,l=$('ed-level').value,t=$('ed-time').value; if(!s) return Swal.fire('Isi Mapel','','warning'); Swal.fire({title:'Saving...',didOpen:()=>Swal.showLoading()}); const d={subject:s,level:l,timeLimit:t,questions:state.editorQuestions,isActive:true,createdAt:serverTimestamp()}; try{ if(state.currentExamId) await updateDoc(doc(db,"exams",state.currentExamId),d); else await addDoc(collection(db,"exams"),d); Swal.fire('Sukses','','success').then(()=>window.loadAdminPage('list')); }catch(e){ Swal.fire('Err',e.message,'error'); }};
-        window.toggleExamStatus = async (id,s) => { await updateDoc(doc(db,"exams",id),{isActive:!s}); window.loadAdminPage('list'); };
-        window.deleteExam = async (id) => { if((await Swal.fire({title:'Delete?',icon:'warning',showCancelButton:true})).isConfirmed){ await deleteDoc(doc(db,"exams",id)); window.loadAdminPage('list'); }};
-        window.editExam = (d) => window.loadAdminPage('editor',d);
-        window.openAI_File = () => $('ai-file-input').click();
-        window.handleAIFile = async (i) => { const f=i.files[0]; try{ const t=f.type==="application/pdf"?await readPdfText(f):await readDocxHtml(f); window.confirmAI(t,"5"); }catch(e){ Swal.fire('Err',e.message,'error'); }};
-        window.openAI_Text = async () => { const {value:t}=await Swal.fire({input:'textarea',title:'Paste Materi'}); if(t) window.confirmAI(t,"5"); };
-        window.confirmAI = (t,c) => { Swal.fire({title:'Generate',html:`<input id="aic" type="number" value="${c}" class="swal2-input">`,preConfirm:()=>generateQuestionsAI(t,$('aic').value,$('ed-level').value)}).then(r=>{ if(r.isConfirmed){ state.editorQuestions=[...state.editorQuestions,...r.value]; renderQList(); Swal.fire('Sukses',r.value.length+' added','success'); }}); };
+            async deleteColumn(id) { if(await this.showConfirm("Hapus Kolom?","")) { this.gradesData[this.currentView].columns = this.gradesData[this.currentView].columns.filter(c=>c.id!==id); this.addNotification("Kolom dihapus."); } },
+            async fetchSchedules() { try{const s=await getDoc(doc(db,'artifacts',appId,'public','data','schedules', 'main')); if(s.exists()) this.schedules=s.data().list||[]; }catch(e){} },
+            async fetchProfile() { try{const s=await getDoc(doc(db,'artifacts',appId,'public','data','settings', 'profile')); if(s.exists()) this.profile=s.data(); }catch(e){} },
+            async saveProfile() { await setDoc(doc(db,'artifacts',appId,'public','data','settings', 'profile'), this.profile); this.showAlert("Disimpan","Profil OK",'success'); this.addNotification("Profil disimpan."); },
+            async resetActivities() { if(await this.showConfirm("RESET DATABASE?", "Semua data nilai, absensi, dan vocab akan dihapus. Data siswa TETAP ADA.")) { this.loading = true; try { const batch = writeBatch(db); batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'vocabulary', 'main'), {}); ['tugas', 'ulangan', 'psas', 'psat'].forEach(t => batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'grades', t), {})); const attCol = collection(db, 'artifacts', appId, 'public', 'data', 'attendance'); const attSnap = await getDocs(attCol); attSnap.forEach(d => batch.delete(d.ref)); await batch.commit(); this.addNotification("Database berhasil di-reset."); setTimeout(() => location.reload(), 1000); } catch(e) { console.error(e); this.showAlert("Error", "Gagal reset: " + e.message, "error"); this.loading = false; } } },
+            
+            // --- CHARTS ---
+            async fetchDashboardStats() {
+                const dates = []; const curr = new Date(); const first = curr.getDate() - curr.getDay() + 1;
+                for(let i=0; i<6; i++) dates.push(new Date(curr.setDate(first+i)).toISOString().slice(0,10));
+                let hadir=0, alpha=0, total=0; const alphaCounts = {};
+                const snaps = await Promise.all(dates.map(d=>getDoc(doc(db,'artifacts',appId,'public','data','attendance',d))));
+                const dataH = [0,0,0,0,0,0], dataA = [0,0,0,0,0,0];
+                snaps.forEach((s, i) => {
+                    if(s.exists()) { const d = s.data(); Object.entries(d).forEach(([sid, st]) => { const stu = this.students.find(x=>x.id===sid); if(stu && (this.selectedClass==='all' || stu.class===this.selectedClass)) { total++; if(st==='H') { hadir++; dataH[i]++; } else if(st==='A') { alpha++; dataA[i]++; alphaCounts[sid]=(alphaCounts[sid]||0)+1; } } }); }
+                });
+                this.dashboardStats = { attendanceRate: total>0 ? Math.round((hadir/total)*100) : 0, totalAlpha: alpha, topAlphaStudents: Object.entries(alphaCounts).map(([id,c])=>({ name:this.students.find(x=>x.id===id)?.name||'?', class:this.students.find(x=>x.id===id)?.class||'-', count:c })).sort((a,b)=>b.count-a.count).slice(0,5), chartHadir: dataH, chartAlpha: dataA, chartLabels: ['Sen','Sel','Rab','Kam','Jum','Sab'] };
+                this.$nextTick(()=>this.initCharts());
+            },
+            initCharts() {
+                if(this.barChartInstance) this.barChartInstance.destroy();
+                const ctx = document.getElementById('attendanceChart');
+                if(ctx) {
+                    this.barChartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: { labels: this.dashboardStats.chartLabels, datasets: [{label:'Hadir',data:this.dashboardStats.chartHadir,backgroundColor:'#d4f049',borderRadius:4},{label:'Alpha',data:this.dashboardStats.chartAlpha,backgroundColor:'#1e1e2d',borderRadius:4}] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+                    });
+                }
+            },
+            toggleAllSelection(e) { this.selectedStudentsForDeletion = e.target.checked ? this.students.map(s=>s.id) : []; },
+            isRedDate(d) { return this.redDates.some(r=>r.day===d); },
+            processBulkImport() {
+                if(!this.bulkImportText) return;
+                const lines = this.bulkImportText.trim().split('\n');
+                const b = writeBatch(db); let count = 0;
+                lines.forEach(l => { const c = l.split(/\||\t|,/); if(c.length >= 4) { const name = c[3]?.trim(); if(name) { b.set(doc(collection(db,'artifacts',appId,'public','data','students')), { nisn: c[1]?.trim()||'', name, gender: c[4]?.trim()||'L', class: c[5]?.trim()||'X' }); count++; } } });
+                b.commit().then(()=>{ this.showAlert("Import OK", `Berhasil ${count} siswa.`); this.showBulkImportModal=false; this.addNotification(`Import ${count} berhasil.`); });
+            }
+        }
+    }).mount('#app');
+</script>
 
-        renderLogin();
-    </script>
 </body>
 </html>
