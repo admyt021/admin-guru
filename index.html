@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduAdmin - Guru Bahasa Inggris</title>
+    <!-- Favicon Keren (Baru) -->
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3665/3665939.png" type="image/png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; overflow-x: hidden; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1e1e2d; }
+        ::-webkit-scrollbar-thumb { background: #d4f049; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b1cc30; }
+
+        /* Sidebar Navigation Styles */
+        .nav-item { transition: all 0.2s ease; }
+        .nav-item:not(.active):hover { background-color: #374151; color: white; }
+        .nav-item.active { background-color: #d4f049; color: #1e1e2d; font-weight: 700; box-shadow: 0 4px 15px rgba(212, 240, 73, 0.3); }
+        .nav-item.active:hover { background-color: #cbe63d; color: #1e1e2d; }
+        .nav-item.active i { color: #1e1e2d; }
+        
+        /* NEW LOADING SCREEN */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #0f172a; /* Darker Navy */
+            z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .loader-spinner {
+            width: 50px; height: 50px;
+            border: 5px solid #1e1e2d;
+            border-top: 5px solid #d4f049;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px rgba(212, 240, 73, 0.3);
+        }
+        .loading-text {
+            color: #d4f049; font-weight: 600; letter-spacing: 2px; font-size: 14px;
+            animation: pulse-text 2s infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Modal Animation */
+        .modal-enter-active, .modal-leave-active { transition: all 0.3s ease; }
+        .modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.95); }
+
+        /* Vocab Boxes */
+        .vocab-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+        .vocab-box { aspect-ratio: 1; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; border-radius: 6px; transition: all 0.1s; font-weight: bold; color: #666; background: white; }
+        .vocab-box.status-bl { background-color: #facc15; border-color: #eab308; color: #422006; }
+        .vocab-box.status-l { background-color: #d4f049; border-color: #bad336; color: #1e1e2d; }
+
+        /* Progress Circle */
+        .progress-circle { width: 32px; height: 32px; border-radius: 50%; background: conic-gradient(#d4f049 calc(var(--percent) * 1%), #333 0); display: flex; align-items: center; justify-content: center; position: relative; }
+        .progress-circle::before { content: ''; position: absolute; width: 26px; height: 26px; background: #1f2937; border-radius: 50%; }
+        .progress-content { position: relative; z-index: 1; font-size: 9px; color: #d4f049; font-weight: bold; }
+
+        .sidebar-mobile { transition: transform 0.3s ease-in-out; }
+        .stats-card-absensi { transition: transform 0.2s; }
+        .stats-card-absensi:hover { transform: translateY(-3px); }
+        
+        /* Mobile Specific Tweaks */
+        @media (max-width: 768px) {
+            .page-content-mobile { padding: 0.75rem; font-size: 0.8rem; }
+            .header-title-box { max-width: 180px; line-height: 1.1; }
+            .header-title-mobile { font-size: 1rem; white-space: normal; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+            .table-mobile th, .table-mobile td { padding: 0.25rem 0.4rem !important; font-size: 0.7rem !important; }
+            .table-mobile td.col-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .btn-icon-mobile { width: 24px !important; height: 24px !important; font-size: 9px !important; }
+            .btn-vocab-mobile { padding: 2px 6px !important; font-size: 0.65rem !important; }
+            .schedule-menu-container { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: flex-end; max-width: 200px; }
+            .schedule-btn { padding: 0.2rem 0.5rem; font-size: 0.65rem; flex-grow: 1; text-align: center; }
+            .btn-mobile { padding: 0.4rem 0.8rem; font-size: 0.75rem; }
+            .card-title-mobile { font-size: 1rem; }
+            .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="flex h-screen overflow-hidden relative" @click="handleGlobalClick">
+
+    <!-- NEW LOADING SCREEN -->
+    <div v-if="loading" class="loading-overlay">
+        <div class="loader-spinner"></div>
+        <p class="loading-text">MEMUAT SISTEM...</p>
+    </div>
+
+    <!-- MODALS -->
+    <transition name="modal"><div v-if="showRenameColumnModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4"><div class="bg-white w-full max-w-sm p-6 rounded-3xl shadow-2xl transform transition-all"><div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4"><div class="w-10 h-10 rounded-full bg-[#1e1e2d] flex items-center justify-center text-[#d4f049]"><i class="fa-solid fa-pen-to-square"></i></div><div><h3 class="font-bold text-xl text-gray-800">Ubah Nama Kolom</h3></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Nama Baru</label><input v-model="editingColumn.name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:outline-none focus:border-[#d4f049] focus:bg-white transition" @keyup.enter="saveColumnRename"></div></div><div class="flex justify-end gap-3"><button @click="showRenameColumnModal = false" class="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition">Batal</button><button @click="saveColumnRename" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#d4f049] text-[#1e1e2d] hover:bg-[#cbe63d] shadow-lg shadow-lime-200 transition transform hover:scale-105">Simpan</button></div></div></div></transition>
+    <transition name="modal"><div v-if="showEditScheduleModal" class="fixed inset-0 z-[90] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4"><div class="bg-white w-full max-w-md p-6 rounded-3xl shadow-2xl transform transition-all"><div class="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4"><div class="w-10 h-10 rounded-full bg-[#1e1e2d] flex items-center justify-center text-[#d4f049]"><i class="fa-solid fa-pen-to-square"></i></div><div><h3 class="font-bold text-xl text-gray-800">Edit Jadwal</h3></div></div><div class="space-y-4 mb-6"><div><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Materi</label><input v-model="editingScheduleSlot.subject" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:outline-none focus:border-[#d4f049] focus:bg-white transition"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Jam</label><input v-model="editingScheduleSlot.time" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#d4f049] focus:bg-white transition"></div><div><label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Kelas</label><input v-model="editingScheduleSlot.class" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#d4f049] focus:bg-white transition"></div></div></div><div class="flex justify-end gap-3"><button @click="showEditScheduleModal = false" class="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition">Batal</button><button @click="saveScheduleEdit" class="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#d4f049] text-[#1e1e2d] hover:bg-[#cbe63d] shadow-lg shadow-lime-200 transition transform hover:scale-105">Simpan</button></div></div></div></transition>
+    <transition name="modal"><div v-if="modal.show" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm p-4"><div class="bg-[#1e1e2d] w-full max-w-sm p-6 rounded-2xl shadow-2xl border border-gray-600 text-white transform transition-all"><div class="flex items-center gap-3 mb-4"><div :class="['w-10 h-10 rounded-full flex items-center justify-center', modal.type === 'error' ? 'bg-red-500' : 'bg-[#d4f049]']"><i :class="['fa-solid text-lg', modal.type === 'error' ? 'fa-triangle-exclamation text-white' : 'fa-check text-[#1e1e2d]']"></i></div><h3 class="font-bold text-lg">{{ modal.title }}</h3></div><p class="text-gray-300 mb-6 text-sm leading-relaxed">{{ modal.message }}</p><div class="flex justify-end gap-3"><button v-if="modal.isConfirm" @click="closeModal(false)" class="px-4 py-2 rounded-lg text-sm font-bold text-gray-400 hover:bg-gray-700 transition">Batal</button><button @click="closeModal(true)" :class="['px-6 py-2 rounded-lg text-sm font-bold text-[#1e1e2d] transition transform hover:scale-105 shadow-lg', modal.type === 'error' ? 'bg-red-500 text-white' : 'bg-[#d4f049] hover:bg-[#cbe63d]']">{{ modal.confirmText || 'OKE' }}</button></div></div></div></transition>
+    <transition name="modal"><div v-if="showVocabModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4"><div class="bg-white w-full max-w-lg p-6 rounded-3xl shadow-2xl flex flex-col max-h-[90vh]"><div class="flex justify-between items-center mb-2"><div><h3 class="font-bold text-xl text-gray-800">Target 100 Vocabulary</h3><p class="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full inline-block mt-1">{{ selectedVocabStudent.name }}</p></div><button @click="showVocabModal = false" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-500 transition flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button></div><div class="grid grid-cols-3 gap-2 mb-4 text-center"><div class="bg-green-100 p-2 rounded-xl border border-green-200"><p class="text-[10px] text-green-700 font-bold uppercase">Lancar</p><p class="text-xl font-bold text-green-800">{{ getVocabStats(selectedVocabStudent.id).l }}</p></div><div class="bg-yellow-100 p-2 rounded-xl border border-yellow-200"><p class="text-[10px] text-yellow-700 font-bold uppercase">Belum Lancar</p><p class="text-xl font-bold text-yellow-800">{{ getVocabStats(selectedVocabStudent.id).bl }}</p></div><div class="bg-gray-100 p-2 rounded-xl border border-gray-200"><p class="text-[10px] text-gray-500 font-bold uppercase">Belum</p><p class="text-xl font-bold text-gray-600">{{ getVocabStats(selectedVocabStudent.id).t }}</p></div></div><div class="overflow-y-auto flex-1 mb-4 p-1"><div class="vocab-grid"><div v-for="n in 100" :key="n" @click="cycleVocabItem(selectedVocabStudent.id, n)" :class="['vocab-box', getVocabClass(selectedVocabStudent.id, n)]">{{ n }}</div></div></div><div class="pt-2 border-t"><button @click="saveVocabData" class="w-full bg-[#1e1e2d] text-[#d4f049] py-3 rounded-xl text-sm font-bold hover:bg-black transition shadow-lg flex justify-center items-center gap-2"><i class="fa-solid fa-save"></i> Simpan Progress</button></div></div></div></transition>
+    <div v-if="showAddStudentModal" class="fixed inset-0 bg-black bg-opacity-50 z-[90] flex items-center justify-center p-4"><div class="bg-white p-6 rounded-xl w-full max-w-md transform transition-all"><h4 class="font-bold mb-4 text-lg text-gray-800 border-b pb-2">Tambah Siswa Baru</h4><div class="space-y-3 mb-6"><input v-model="newStudent.nipd" placeholder="NIPD" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"><input v-model="newStudent.nisn" placeholder="NISN" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"><input v-model="newStudent.name" placeholder="Nama Siswa" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"><select v-model="newStudent.gender" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select><input v-model="newStudent.class" placeholder="Kelas (ex: X-A)" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"></div><div class="flex justify-end gap-2"><button @click="showAddStudentModal=false" class="text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-100 text-sm">Batal</button><button @click="addNewStudent" class="bg-[#d4f049] text-[#1e1e2d] px-6 py-2 rounded-lg font-bold text-sm hover:bg-[#cbe63d] shadow-md">Simpan</button></div></div></div>
+    <div v-if="showBulkImportModal" class="fixed inset-0 bg-black bg-opacity-50 z-[90] flex items-center justify-center p-4"><div class="bg-white p-6 rounded-xl w-full max-w-lg"><h4 class="font-bold mb-2">Import Excel</h4><textarea v-model="bulkImportText" class="w-full border p-2 text-xs h-40 mb-4" placeholder="Paste data here..."></textarea><div class="flex justify-end gap-2"><button @click="showBulkImportModal=false" class="text-gray-500">Batal</button><button @click="processBulkImport" class="bg-green-600 text-white px-4 py-2 rounded font-bold">Import</button></div></div></div>
+
+    <div v-if="mobileMenuOpen" class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" @click="mobileMenuOpen = false"></div>
+
+    <!-- SIDEBAR -->
+    <aside :class="['fixed md:static inset-y-0 left-0 z-40 w-64 bg-[#1e1e2d] text-white flex flex-col flex-shrink-0 transition-transform duration-300 md:translate-x-0', mobileMenuOpen ? 'translate-x-0' : '-translate-x-full', sidebarCollapsed ? 'md:w-20' : 'md:w-64']">
+        <!-- NEW LOGO -->
+        <div class="h-24 flex items-center justify-center border-b border-gray-700 bg-black/10">
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 bg-gradient-to-br from-[#d4f049] to-green-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(212,240,73,0.3)] transform rotate-3">
+                    <!-- New Professional Icon -->
+                    <i class="fa-solid fa-layer-group text-[#1e1e2d] text-xl"></i>
+                </div>
+                <span v-if="!sidebarCollapsed" class="text-lg font-bold tracking-widest uppercase">Edu<span class="text-[#d4f049]">Admin</span></span>
+            </div>
+        </div>
+
+        <div class="p-6 flex flex-col items-center border-b border-gray-700" v-if="!sidebarCollapsed">
+            <div class="w-16 h-16 rounded-full bg-gray-600 overflow-hidden mb-3 border-2 border-[#d4f049]"><img :src="profile.avatar || 'https://ui-avatars.com/api/?name=' + (profile.name || 'G') + '&background=d4f049&color=1e1e2d'" alt="Profile" class="w-full h-full object-cover"></div>
+            <h3 class="font-semibold text-lg text-center leading-tight">{{ profile.name }}</h3><p class="text-gray-400 text-xs mt-1">Guru Bahasa Inggris</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+            <a href="#" @click.prevent="navigate('dashboard')" :class="['nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-300', currentView === 'dashboard' ? 'active' : '']"><i class="fa-solid fa-border-all text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Dashboard</span></a>
+            <a href="#" @click.prevent="navigate('absensi')" :class="['nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-300', currentView === 'absensi' ? 'active' : '']"><i class="fa-solid fa-calendar-check text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Absensi Siswa</span></a>
+            <a href="#" @click.prevent="navigate('vocabulary')" :class="['nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-300', currentView === 'vocabulary' ? 'active' : '']"><i class="fa-solid fa-language text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Vocabulary</span></a>
+            
+            <!-- VERB MENU (NEW) -->
+            <div class="relative">
+                <button @click="showVerbMenu = !showVerbMenu" :class="['w-full nav-item flex items-center justify-between px-4 py-3 rounded-xl transition-colors text-gray-300', ['regular-verb','irregular-verb'].includes(currentView) ? 'active' : '']">
+                    <div class="flex items-center gap-3"><i class="fa-solid fa-book-open text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Verb Lists</span></div><i v-if="!sidebarCollapsed" class="fa-solid fa-chevron-down text-xs transition-transform" :class="{'rotate-180': showVerbMenu}"></i>
+                </button>
+                <div v-if="showVerbMenu && !sidebarCollapsed" class="ml-10 mt-1 space-y-1">
+                    <a href="#" @click="navigate('regular-verb')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Regular Verb</a>
+                    <a href="#" @click="navigate('irregular-verb')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Irregular Verb</a>
+                </div>
+            </div>
+
+            <div class="relative">
+                <button @click="showGradingMenu = !showGradingMenu" :class="['w-full nav-item flex items-center justify-between px-4 py-3 rounded-xl transition-colors text-gray-300', ['tugas','ulangan','psas','psat'].includes(currentView) ? 'active' : '']">
+                    <div class="flex items-center gap-3"><i class="fa-solid fa-pen-to-square text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Penilaian</span></div><i v-if="!sidebarCollapsed" class="fa-solid fa-chevron-down text-xs transition-transform" :class="{'rotate-180': showGradingMenu}"></i>
+                </button>
+                <div v-if="showGradingMenu && !sidebarCollapsed" class="ml-10 mt-1 space-y-1">
+                    <a href="#" @click="navigate('tugas')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Nilai Tugas</a>
+                    <a href="#" @click="navigate('ulangan')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Nilai Ulangan</a>
+                    <a href="#" @click="navigate('psas')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Nilai PSAS</a>
+                    <a href="#" @click="navigate('psat')" class="block px-3 py-2 text-sm text-gray-400 hover:text-[#d4f049]">Nilai PSAT</a>
+                </div>
+            </div>
+            <a href="#" @click.prevent="navigate('pengaturan')" :class="['nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-gray-300', currentView === 'pengaturan' ? 'active' : '']"><i class="fa-solid fa-gear text-lg w-6 text-center"></i><span v-if="!sidebarCollapsed">Pengaturan</span></a>
+        </nav>
+        <div class="p-4 border-t border-gray-700 hidden md:block"><button @click="sidebarCollapsed = !sidebarCollapsed" class="w-full flex items-center justify-center p-2 rounded hover:bg-gray-700 text-gray-400"><i :class="sidebarCollapsed ? 'fa-solid fa-right-from-bracket' : 'fa-solid fa-left-long'"></i></button></div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="flex-1 flex flex-col bg-[#f8f9fc] overflow-hidden w-full">
+        <header class="h-20 bg-white shadow-sm flex items-center justify-between px-4 md:px-8 z-10 flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <button @click.stop="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-gray-600 focus:outline-none"><i class="fa-solid fa-bars text-2xl"></i></button>
+                <div class="header-title-box">
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 capitalize header-title-mobile">{{ pageTitle }}</h1>
+                    <p class="text-[10px] md:text-xs text-gray-500 hidden md:block">Administrasi Bahasa Inggris • {{ currentDate }}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 md:gap-6">
+                <div class="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full border border-gray-200"><i class="fa-solid fa-filter text-gray-500 text-xs"></i><select v-model="selectedClass" class="bg-transparent text-xs md:text-sm font-semibold text-gray-700 outline-none cursor-pointer"><option value="all">Semua</option><option v-for="cls in uniqueClasses" :key="cls" :value="cls">{{ cls }}</option></select></div>
+                <div class="relative" id="notif-container">
+                    <button @click.stop="showNotifs = !showNotifs" class="relative w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition"><i class="fa-regular fa-bell text-gray-600"></i><span v-if="notifications.length > 0" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span></button>
+                    <div v-if="showNotifs" class="absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden" @click.stop>
+                        <div class="bg-[#1e1e2d] px-4 py-3 text-white text-xs font-bold flex justify-between"><span>Notifikasi</span><button @click="notifications = []; showNotifs = false" class="text-gray-400 hover:text-white">Clear</button></div>
+                        <div class="max-h-64 overflow-y-auto"><div v-for="(notif, idx) in notifications" :key="idx" class="px-4 py-3 border-b border-gray-50 text-xs hover:bg-gray-50 flex gap-3"><div class="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></div><div><p class="text-gray-800 font-medium">{{ notif.text }}</p><p class="text-gray-400 text-[10px]">{{ notif.time }}</p></div></div></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 relative page-content-mobile">
+            <!-- DASHBOARD -->
+            <div v-if="currentView === 'dashboard'" class="space-y-6">
+                <!-- (Dashboard content same as before) -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex justify-between items-start"><div><p class="text-gray-500 text-sm font-medium mb-1">Total Siswa</p><h3 class="text-3xl font-bold text-gray-800 card-title-mobile">{{ stats.total }}</h3></div><div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center"><i class="fa-solid fa-users text-blue-500"></i></div></div><div class="mt-4 flex gap-4 text-xs font-medium"><span class="text-blue-600 bg-blue-50 px-2 py-1 rounded">L: {{ stats.male }}</span><span class="text-pink-600 bg-pink-50 px-2 py-1 rounded">P: {{ stats.female }}</span></div></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex justify-between items-start"><div><p class="text-gray-500 text-sm font-medium mb-1">Kehadiran</p><h3 class="text-3xl font-bold text-gray-800 card-title-mobile">{{ stats.attendanceRate }}%</h3></div><div class="w-10 h-10 rounded-full bg-[#d4f049] flex items-center justify-center"><i class="fa-solid fa-check text-green-800"></i></div></div><p class="text-xs text-gray-400 mt-4">Minggu Ini</p></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex justify-between items-start"><div><p class="text-gray-500 text-sm font-medium mb-1">Total Alpha</p><h3 class="text-3xl font-bold text-gray-800 card-title-mobile">{{ stats.totalAlpha }}</h3></div><div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center"><i class="fa-solid fa-user-xmark text-red-500"></i></div></div><p class="text-xs text-gray-400 mt-4">Perlu tindak lanjut</p></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"><div class="flex justify-between items-start"><div><p class="text-gray-500 text-sm font-medium mb-1">Avg Vocab</p><h3 class="text-3xl font-bold text-gray-800 card-title-mobile">{{ Math.round(stats.avgVocab) }}</h3></div><div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center"><i class="fa-solid fa-book text-purple-500"></i></div></div><div class="w-full bg-gray-200 rounded-full h-1.5 mt-4"><div class="bg-purple-500 h-1.5 rounded-full" :style="`width: ${stats.avgVocab}%`"></div></div></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col"><h4 class="font-bold text-gray-800 mb-4 card-title-mobile">Grafik Kehadiran vs Alpha</h4><div class="flex-1 min-h-[250px] relative"><canvas id="attendanceChart"></canvas></div></div>
+                    <div class="bg-[#1e1e2d] text-white p-5 rounded-2xl shadow-lg border border-gray-700 flex flex-col h-full max-h-[360px]">
+                        <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-2"><h4 class="font-bold text-[#d4f049] text-base card-title-mobile">5 Siswa Sering Alpha (Semua Waktu)</h4><i class="fa-solid fa-chart-pie text-gray-500 text-sm"></i></div>
+                        <div class="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar-dark">
+                             <div v-for="(student, idx) in stats.topAlphaStudents" :key="idx" class="flex justify-between items-center bg-gray-800/50 p-2 rounded-lg border border-gray-700 hover:bg-gray-800 transition">
+                                <div class="flex items-center gap-2.5"><div class="text-[10px] text-gray-500 font-mono w-3">{{ idx + 1 }}</div><div class="overflow-hidden"><p class="font-bold text-xs text-white truncate w-28">{{ student.name }}</p><p class="text-[9px] text-[#d4f049]">{{ student.class }}</p></div></div>
+                                <div class="flex items-center gap-2"><div class="text-right"><p class="font-bold text-sm text-white leading-none">{{ student.count }}x</p></div><div class="progress-circle" :style="`--percent: ${Math.min((student.count / 10) * 100, 100)}`"><div class="progress-content">{{ student.count }}</div></div></div>
+                             </div>
+                             <div v-if="stats.topAlphaStudents.length === 0" class="flex flex-col items-center justify-center h-full text-gray-500 text-xs py-4"><i class="fa-solid fa-thumbs-up text-xl mb-1 text-[#d4f049]"></i>Rajin Semua!</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4"><h4 class="font-bold text-gray-800 card-title-mobile">Kalender Pendidikan</h4><span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">{{ currentMonthName }}</span></div>
+                        <div class="grid grid-cols-7 gap-1 text-center text-sm mb-4"><div class="text-gray-400 text-xs">M</div><div class="text-gray-400 text-xs">S</div><div class="text-gray-400 text-xs">S</div><div class="text-gray-400 text-xs">R</div><div class="text-gray-400 text-xs">K</div><div class="text-gray-400 text-xs">J</div><div class="text-gray-400 text-xs">S</div><div v-for="d in calendarDays" :key="d.date" class="aspect-square flex items-center justify-center rounded-lg text-xs font-medium cursor-pointer transition hover:bg-gray-50" :class="[d.isToday ? 'bg-[#d4f049] text-black font-bold' : '', d.isRedDate ? 'text-red-500 font-bold bg-red-50' : 'text-gray-700']">{{ d.day }}</div></div>
+                        <div class="space-y-2"><div v-for="evt in redDates" :key="evt.date" class="flex gap-3 text-xs bg-red-50 p-2 rounded-lg items-start"><div class="font-bold text-red-500 min-w-[24px]">{{ evt.day }}</div><div class="text-red-700">{{ evt.desc }}</div></div></div>
+                    </div>
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4 flex-wrap gap-2"><h4 class="font-bold text-gray-800 card-title-mobile">Jadwal Mengajar</h4>
+                            <div class="flex gap-2 schedule-menu-container">
+                                <button v-for="day in ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']" @click="selectedScheduleDay = day" :class="['px-3 py-1 text-xs rounded-full transition schedule-btn', selectedScheduleDay === day ? 'bg-[#1e1e2d] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']">{{ day.substring(0,3) }}</button>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden rounded-xl border border-gray-100">
+                            <table class="w-full text-sm text-left table-mobile"><thead class="bg-gray-50 text-gray-500 uppercase text-xs"><tr><th class="px-6 py-3">Jam</th><th class="px-6 py-3">Kelas</th><th class="px-6 py-3">Materi</th><th class="px-6 py-3 text-right">Aksi</th></tr></thead>
+                                <tbody class="bg-white divide-y divide-gray-100">
+                                    <tr v-for="(slot, index) in currentDaySchedule" :key="index" class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">{{ slot.time }}</td><td class="px-6 py-4"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">{{ slot.class }}</span></td><td class="px-6 py-4 text-gray-600">{{ slot.subject }}</td><td class="px-6 py-4 text-right"><button @click="deleteSchedule(slot)" class="text-gray-400 hover:text-red-500 mr-2"><i class="fa-solid fa-trash"></i></button><button @click="openEditSchedule(slot)" class="text-gray-400 hover:text-blue-500"><i class="fa-solid fa-pen"></i></button></td></tr>
+                                    <tr v-if="currentDaySchedule.length === 0"><td colspan="4" class="px-6 py-8 text-center text-gray-400">Tidak ada jadwal.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button @click="addScheduleSlot" class="mt-4 w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-[#d4f049] hover:text-[#d4f049] hover:bg-lime-50 transition text-sm font-medium"><i class="fa-solid fa-plus mr-2"></i> Tambah Jadwal</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABSENSI (UPDATED WITH PRINT) -->
+            <div v-if="currentView === 'absensi'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex flex-col md:flex-row items-center gap-4 w-full">
+                        <div class="relative w-full md:w-auto"><input type="date" v-model="attendanceDate" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#d4f049]"><i class="fa-regular fa-calendar absolute left-3 top-3.5 text-gray-400"></i></div>
+                        <div class="grid grid-cols-4 gap-3 w-full md:w-auto flex-1">
+                             <div class="stats-card-absensi p-3 rounded-xl bg-green-50 border border-green-100 text-center shadow-sm"><p class="text-[10px] text-green-600 font-bold uppercase tracking-wider">Hadir</p><p class="text-2xl font-bold text-green-800">{{ countAttendance('H') }}</p></div>
+                             <div class="stats-card-absensi p-3 rounded-xl bg-blue-50 border border-blue-100 text-center shadow-sm"><p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Izin</p><p class="text-2xl font-bold text-blue-800">{{ countAttendance('I') }}</p></div>
+                             <div class="stats-card-absensi p-3 rounded-xl bg-yellow-50 border border-yellow-100 text-center shadow-sm"><p class="text-[10px] text-yellow-600 font-bold uppercase tracking-wider">Sakit</p><p class="text-2xl font-bold text-yellow-800">{{ countAttendance('S') }}</p></div>
+                             <div class="stats-card-absensi p-3 rounded-xl bg-red-50 border border-red-100 text-center shadow-sm"><p class="text-[10px] text-red-600 font-bold uppercase tracking-wider">Alpha</p><p class="text-2xl font-bold text-red-800">{{ countAttendance('A') }}</p></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button @click="printRecap" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition shadow-lg flex justify-center items-center gap-2 btn-mobile"><i class="fa-solid fa-print"></i> Rekap</button>
+                        <button @click="saveAttendance" class="flex-1 md:flex-none bg-[#1e1e2d] hover:bg-gray-800 text-white px-8 py-3 rounded-xl text-sm font-bold transition shadow-lg shadow-gray-300/50 flex justify-center items-center gap-2 btn-mobile"><i class="fa-solid fa-save"></i> Simpan</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-mobile table-compact-mobile"><thead class="bg-gray-50 uppercase text-xs font-bold text-gray-700"><tr><th class="px-6 py-4">Nama</th><th class="px-6 py-4">Kelas</th><th class="px-6 py-4 text-center">Absensi</th></tr></thead><tbody class="divide-y divide-gray-100"><tr v-for="(student, index) in filteredStudents" :key="student.id" class="hover:bg-gray-50 transition"><td class="px-6 py-4 font-medium text-gray-900 col-name">{{ student.name }}</td><td class="px-6 py-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs">{{ student.class }}</span></td><td class="px-6 py-4 text-center"><div class="inline-flex bg-gray-100 rounded-lg p-1"><button v-for="status in ['H','I','S','A']" @click="setAttendance(student.id, status)" :class="['w-10 h-10 btn-icon-mobile rounded-lg text-xs font-bold transition', getAttendance(student.id) === status ? (status==='H'?'bg-green-500 text-white shadow-lg shadow-green-200': status==='I'?'bg-blue-500 text-white': status==='S'?'bg-yellow-500 text-white':'bg-red-500 text-white') : 'text-gray-500 hover:bg-white']">{{ status }}</button></div></td></tr></tbody></table></div>
+            </div>
+
+            <!-- VERB VIEW (NEW) -->
+            <div v-if="currentView === 'regular-verb' || currentView === 'irregular-verb'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h3 class="font-bold text-lg capitalize">{{ currentView.replace('-', ' ') }} List</h3>
+                    <div class="relative w-full md:w-64">
+                        <input v-model="verbSearch" type="text" placeholder="Cari kata kerja..." class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]">
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="bg-gray-50 uppercase text-xs font-bold text-gray-700">
+                            <tr>
+                                <th class="px-6 py-4">V1 (Base)</th>
+                                <th class="px-6 py-4">V2 (Past)</th>
+                                <th class="px-6 py-4">V3 (Participle)</th>
+                                <th class="px-6 py-4">Arti</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-for="(v, idx) in currentVerbs" :key="idx" class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium flex items-center gap-2">
+                                    {{ v.v1 }} 
+                                    <button @click="speak(v.v1)" class="text-gray-400 hover:text-[#d4f049]"><i class="fa-solid fa-volume-high"></i></button>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {{ v.v2 }} 
+                                    <button @click="speak(v.v2)" class="text-gray-400 hover:text-[#d4f049] ml-1"><i class="fa-solid fa-volume-high text-xs"></i></button>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {{ v.v3 }}
+                                    <button @click="speak(v.v3)" class="text-gray-400 hover:text-[#d4f049] ml-1"><i class="fa-solid fa-volume-high text-xs"></i></button>
+                                </td>
+                                <td class="px-6 py-4 text-gray-800 font-medium">{{ v.meaning }}</td>
+                            </tr>
+                            <tr v-if="currentVerbs.length === 0">
+                                <td colspan="4" class="px-6 py-8 text-center text-gray-400">Kata tidak ditemukan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VOCABULARY -->
+            <div v-if="currentView === 'vocabulary'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center"><h3 class="font-bold text-lg card-title-mobile">Target 100 Vocabulary</h3></div>
+                 <div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-mobile table-compact-mobile"><thead class="bg-gray-50 uppercase text-xs font-bold text-gray-700"><tr><th class="px-6 py-4">Nama</th><th class="px-6 py-4">Kelas</th><th class="px-6 py-4 text-center">Progress</th><th class="px-6 py-4 text-right">Detail</th></tr></thead><tbody class="divide-y divide-gray-100"><tr v-for="student in filteredStudents" :key="student.id" class="hover:bg-gray-50"><td class="px-6 py-4 font-medium col-name">{{ student.name }}</td><td class="px-6 py-4"><span class="bg-gray-100 px-2 py-1 rounded text-xs">{{ student.class }}</span></td><td class="px-6 py-4 text-center"><div class="relative w-full bg-gray-200 rounded-full h-4 overflow-hidden"><div class="bg-purple-500 h-full text-[10px] text-white flex items-center justify-center font-bold" :style="`width: ${getVocabStats(student.id).percent}%`">{{ getVocabStats(student.id).percent }}%</div></div></td><td class="px-6 py-4 text-right"><button @click="openVocabModal(student)" class="text-[#1e1e2d] hover:text-[#d4f049] font-bold text-xs border border-gray-200 px-3 py-1 rounded hover:bg-[#1e1e2d] transition btn-vocab-mobile"><i class="fa-solid fa-list-check mr-1"></i> Cek 100</button></td></tr></tbody></table></div>
+            </div>
+
+            <!-- PENILAIAN -->
+            <div v-if="['tugas', 'ulangan', 'psas', 'psat'].includes(currentView)" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center"><h3 class="font-bold text-lg capitalize card-title-mobile">Input {{ currentView }}</h3><div class="flex gap-2"><button @click="addColumn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-bold transition btn-mobile"><i class="fa-solid fa-plus mr-1"></i> Tambah Kolom</button><button @click="saveGrades" class="bg-[#d4f049] hover:bg-[#c2e035] text-gray-900 px-6 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 btn-mobile"><i class="fa-solid fa-save"></i> Simpan</button></div></div>
+                 <div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600 table-mobile table-compact-mobile"><thead class="bg-gray-50 uppercase text-xs font-bold text-gray-700"><tr><th class="px-6 py-4 sticky left-0 bg-gray-50 z-10">Nama</th><th v-for="col in getGradeColumns()" :key="col.id" class="px-4 py-4 text-center min-w-[120px] group relative"><span @click="renameColumn(col.id, col.name)" class="cursor-pointer hover:underline decoration-dashed">{{ col.name }}</span><button @click="deleteColumn(col.id)" class="absolute top-1 right-1 text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-xmark"></i></button></th></tr></thead><tbody class="divide-y divide-gray-100"><tr v-for="student in filteredStudents" :key="student.id" class="hover:bg-gray-50"><td class="px-6 py-4 font-medium sticky left-0 bg-white col-name">{{ student.name }}</td><td v-for="col in getGradeColumns()" :key="col.id" class="px-4 py-4 text-center"><input type="number" min="0" max="100" :value="getGrade(student.id, col.id)" @input="updateGrade(student.id, col.id, $event.target.value)" class="w-full text-center bg-gray-50 border border-gray-200 rounded p-2 focus:border-[#d4f049] focus:outline-none focus:bg-white transition font-bold text-gray-800"></td></tr></tbody></table></div>
+            </div>
+
+            <!-- PENGATURAN -->
+            <div v-if="currentView === 'pengaturan'" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#1e1e2d] p-6 rounded-2xl shadow-lg border border-gray-700 relative overflow-hidden flex flex-col h-full"><div class="absolute -right-10 -top-10 w-40 h-40 bg-[#d4f049] rounded-full opacity-10 blur-2xl"></div><div class="flex items-center justify-between mb-6 border-b border-gray-700 pb-4"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-full border-2 border-[#d4f049] flex items-center justify-center bg-gray-800 overflow-hidden"><img v-if="profile.avatar" :src="profile.avatar" class="w-full h-full object-cover"><i v-else class="fa-solid fa-user text-[#d4f049] text-xl"></i></div><div><h3 class="font-bold text-lg text-white card-title-mobile">Edit Profil</h3><p class="text-xs text-gray-400">Update informasi</p></div></div><button @click="saveProfile" class="bg-[#d4f049] text-[#1e1e2d] px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#cbe63d] transition shadow-lg shadow-lime-900/20 btn-mobile">Simpan</button></div><div class="space-y-4 flex-1"><div><label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Nama Lengkap</label><input v-model="profile.name" type="text" class="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white focus:border-[#d4f049] focus:outline-none transition placeholder-gray-500"></div><div><label class="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Ganti Avatar (Max 500KB)</label><div class="relative"><input type="file" @change="handleAvatarUpload" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#d4f049] file:text-[#1e1e2d] hover:file:bg-[#cbe63d] cursor-pointer"></div><p class="text-[10px] text-gray-500 mt-1">Format: JPG, PNG.</p></div></div></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-red-100 flex flex-col h-full justify-between"><div><div class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-2"><div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center"><i class="fa-solid fa-database text-red-500"></i></div><h3 class="font-bold text-lg text-gray-800 card-title-mobile">Reset Database</h3></div><p class="text-sm text-gray-500 mb-4 leading-relaxed">Tindakan ini akan menghapus semua data nilai, absensi, dan progress vocabulary secara permanen. <br><br> <strong>Catatan:</strong> Data siswa tidak akan terhapus.</p></div><button @click="resetActivities" class="w-full bg-red-50 text-red-600 hover:bg-red-100 px-6 py-3 rounded-lg text-sm font-bold border border-red-200 transition flex justify-center items-center gap-2 mt-4 btn-mobile"><i class="fa-solid fa-triangle-exclamation"></i> Reset Sekarang</button></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2 flex-wrap gap-2"><h3 class="font-bold text-lg text-gray-800 card-title-mobile">Manajemen Siswa</h3><div class="flex gap-2"><button @click="deleteSelectedStudents" v-if="selectedStudentsForDeletion.length > 0" class="bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-600 transition btn-mobile">Hapus ({{ selectedStudentsForDeletion.length }})</button><button @click="showBulkImportModal = true" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition btn-mobile"><i class="fa-solid fa-file-excel mr-1"></i> Import</button><button @click="showAddStudentModal = true" class="bg-[#1e1e2d] text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-800 transition btn-mobile"><i class="fa-solid fa-plus mr-1"></i> Tambah</button></div></div>
+                    <div class="overflow-x-auto max-h-96 overflow-y-auto"><table class="w-full text-sm text-left table-mobile table-compact-mobile"><thead class="bg-gray-50 sticky top-0"><tr><th class="px-4 py-2 w-10"><input type="checkbox" @change="toggleAllSelection($event)"></th><th class="px-4 py-2">NISN</th><th class="px-4 py-2">Nama</th><th class="px-4 py-2">Kelas</th><th class="px-4 py-2 text-right">Aksi</th></tr></thead><tbody><tr v-for="student in students" :key="student.id" class="border-b border-gray-50 hover:bg-gray-50"><td class="px-4 py-2"><input type="checkbox" :value="student.id" v-model="selectedStudentsForDeletion"></td><td class="px-4 py-2 font-mono text-xs">{{ student.nisn }}</td><td class="px-4 py-2 col-name">{{ student.name }}</td><td class="px-4 py-2"><span class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">{{ student.class }}</span></td><td class="px-4 py-2 text-right"><button @click="deleteStudent(student.id)" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></td></tr></tbody></table></div>
+                </div>
+            </div>
+
+            <div v-if="showAddStudentModal" class="fixed inset-0 bg-black bg-opacity-50 z-[90] flex items-center justify-center p-4"><div class="bg-white p-6 rounded-xl w-full max-w-md transform transition-all"><h4 class="font-bold mb-4 text-lg text-gray-800 border-b pb-2">Tambah Siswa Baru</h4><div class="space-y-3 mb-6"><input v-model="newStudent.nipd" placeholder="NIPD" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"><input v-model="newStudent.nisn" placeholder="NISN" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"><input v-model="newStudent.name" placeholder="Nama Siswa" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"><select v-model="newStudent.gender" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select><input v-model="newStudent.class" placeholder="Kelas (ex: X-A)" class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:outline-none focus:border-[#d4f049]"></div><div class="flex justify-end gap-2"><button @click="showAddStudentModal=false" class="text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-100 text-sm">Batal</button><button @click="addNewStudent" class="bg-[#d4f049] text-[#1e1e2d] px-6 py-2 rounded-lg font-bold text-sm hover:bg-[#cbe63d] shadow-md">Simpan</button></div></div></div>
+            <div v-if="showBulkImportModal" class="fixed inset-0 bg-black bg-opacity-50 z-[90] flex items-center justify-center p-4"><div class="bg-white p-6 rounded-xl w-full max-w-lg"><h4 class="font-bold mb-2">Import Excel</h4><textarea v-model="bulkImportText" class="w-full border p-2 text-xs h-40 mb-4" placeholder="Paste data here..."></textarea><div class="flex justify-end gap-2"><button @click="showBulkImportModal=false" class="text-gray-500">Batal</button><button @click="processBulkImport" class="bg-green-600 text-white px-4 py-2 rounded font-bold">Import</button></div></div></div>
+
+        </div>
+    </main>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    const firebaseConfig = { apiKey: "AIzaSyDPpYq9uusSZRBhXHVi9Bkn8cFPs_a53E8", authDomain: "adminsitrasi-guru.firebaseapp.com", projectId: "adminsitrasi-guru", storageBucket: "adminsitrasi-guru.firebasestorage.app", messagingSenderId: "682401615954", appId: "1:682401615954:web:5d9a59df07a9dee8c34f8b", measurementId: "G-9KVQ5VFDTP" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const appId = "adminsitrasi-guru-v1"; 
+
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                loading: true, mobileMenuOpen: false, sidebarCollapsed: false, currentView: 'dashboard', selectedClass: 'all', attendanceDate: new Date().toISOString().split('T')[0], showGradingMenu: false, showVerbMenu: false,
+                showEditScheduleModal: false, editingScheduleSlot: {}, showRenameColumnModal: false, editingColumn: { id: '', name: '' }, modal: { show: false, title: '', message: '', type: 'info', isConfirm: false, resolve: null }, notifications: [], showNotifs: false, showAddStudentModal: false, showBulkImportModal: false, showVocabModal: false, selectedVocabStudent: {},
+                profile: { name: 'Admin Guru', avatar: '' }, students: [], attendanceData: {}, vocabData: {}, gradesData: {}, schedules: [], 
+                dashboardStats: { attendanceRate: 0, totalAlpha: 0, topAlphaStudents: [], chartLabels: [], chartHadir: [], chartAlpha: [] },
+                newStudent: { nipd: '', nisn: '', name: '', gender: 'L', class: '' }, // UPDATED: Added NIPD
+                selectedStudentsForDeletion: [], selectedScheduleDay: 'Senin', bulkImportText: '', barChartInstance: null, user: null,
+                
+                // VERB DATA (STATIC LIST)
+                verbSearch: '',
+                regularVerbs: [
+                    { v1: 'accept', v2: 'accepted', v3: 'accepted', meaning: 'menerima' },
+                    { v1: 'answer', v2: 'answered', v3: 'answered', meaning: 'menjawab' },
+                    { v1: 'arrive', v2: 'arrived', v3: 'arrived', meaning: 'tiba' },
+                    { v1: 'ask', v2: 'asked', v3: 'asked', meaning: 'bertanya' },
+                    { v1: 'believe', v2: 'believed', v3: 'believed', meaning: 'percaya' },
+                    { v1: 'call', v2: 'called', v3: 'called', meaning: 'memanggil' },
+                    { v1: 'clean', v2: 'cleaned', v3: 'cleaned', meaning: 'membersihkan' },
+                    { v1: 'close', v2: 'closed', v3: 'closed', meaning: 'menutup' },
+                    { v1: 'cook', v2: 'cooked', v3: 'cooked', meaning: 'memasak' },
+                    { v1: 'cry', v2: 'cried', v3: 'cried', meaning: 'menangis' },
+                    { v1: 'dance', v2: 'danced', v3: 'danced', meaning: 'menari' },
+                    { v1: 'decide', v2: 'decided', v3: 'decided', meaning: 'memutuskan' },
+                    { v1: 'discuss', v2: 'discussed', v3: 'discussed', meaning: 'mendiskusikan' },
+                    { v1: 'end', v2: 'ended', v3: 'ended', meaning: 'mengakhiri' },
+                    { v1: 'enjoy', v2: 'enjoyed', v3: 'enjoyed', meaning: 'menikmati' },
+                    { v1: 'explain', v2: 'explained', v3: 'explained', meaning: 'menjelaskan' },
+                    { v1: 'finish', v2: 'finished', v3: 'finished', meaning: 'menyelesaikan' },
+                    { v1: 'follow', v2: 'followed', v3: 'followed', meaning: 'mengikuti' },
+                    { v1: 'happen', v2: 'happened', v3: 'happened', meaning: 'terjadi' },
+                    { v1: 'hate', v2: 'hated', v3: 'hated', meaning: 'membenci' },
+                    { v1: 'help', v2: 'helped', v3: 'helped', meaning: 'membantu' },
+                    { v1: 'invite', v2: 'invited', v3: 'invited', meaning: 'mengundang' },
+                    { v1: 'jump', v2: 'jumped', v3: 'jumped', meaning: 'melompat' },
+                    { v1: 'kill', v2: 'killed', v3: 'killed', meaning: 'membunuh' },
+                    { v1: 'kiss', v2: 'kissed', v3: 'kissed', meaning: 'mencium' },
+                    { v1: 'laugh', v2: 'laughed', v3: 'laughed', meaning: 'tertawa' },
+                    { v1: 'learn', v2: 'learned', v3: 'learned', meaning: 'belajar' },
+                    { v1: 'lie', v2: 'lied', v3: 'lied', meaning: 'berbohong' },
+                    { v1: 'listen', v2: 'listened', v3: 'listened', meaning: 'mendengarkan' },
+                    { v1: 'live', v2: 'lived', v3: 'lived', meaning: 'tinggal/hidup' },
+                    { v1: 'look', v2: 'looked', v3: 'looked', meaning: 'melihat' },
+                    { v1: 'love', v2: 'loved', v3: 'loved', meaning: 'mencintai' },
+                    { v1: 'miss', v2: 'missed', v3: 'missed', meaning: 'merindukan/melewatkan' },
+                    { v1: 'move', v2: 'moved', v3: 'moved', meaning: 'pindah' },
+                    { v1: 'need', v2: 'needed', v3: 'needed', meaning: 'membutuhkan' },
+                    { v1: 'offer', v2: 'offered', v3: 'offered', meaning: 'menawarkan' },
+                    { v1: 'open', v2: 'opened', v3: 'opened', meaning: 'membuka' },
+                    { v1: 'plan', v2: 'planned', v3: 'planned', meaning: 'merencanakan' },
+                    { v1: 'play', v2: 'played', v3: 'played', meaning: 'bermain' },
+                    { v1: 'prefer', v2: 'preferred', v3: 'preferred', meaning: 'lebih suka' },
+                    { v1: 'pull', v2: 'pulled', v3: 'pulled', meaning: 'menarik' },
+                    { v1: 'push', v2: 'pushed', v3: 'pushed', meaning: 'mendorong' },
+                    { v1: 'rain', v2: 'rained', v3: 'rained', meaning: 'hujan' },
+                    { v1: 'remember', v2: 'remembered', v3: 'remembered', meaning: 'ingat' },
+                    { v1: 'repair', v2: 'repaired', v3: 'repaired', meaning: 'memperbaiki' },
+                    { v1: 'return', v2: 'returned', v3: 'returned', meaning: 'kembali' },
+                    { v1: 'save', v2: 'saved', v3: 'saved', meaning: 'menyimpan/menyelamatkan' },
+                    { v1: 'share', v2: 'shared', v3: 'shared', meaning: 'berbagi' },
+                    { v1: 'smile', v2: 'smiled', v3: 'smiled', meaning: 'tersenyum' },
+                    { v1: 'start', v2: 'started', v3: 'started', meaning: 'memulai' },
+                    { v1: 'stay', v2: 'stayed', v3: 'stayed', meaning: 'tinggal' },
+                    { v1: 'stop', v2: 'stopped', v3: 'stopped', meaning: 'berhenti' },
+                    { v1: 'study', v2: 'studied', v3: 'studied', meaning: 'belajar' },
+                    { v1: 'talk', v2: 'talked', v3: 'talked', meaning: 'berbicara' },
+                    { v1: 'thank', v2: 'thanked', v3: 'thanked', meaning: 'berterima kasih' },
+                    { v1: 'touch', v2: 'touched', v3: 'touched', meaning: 'menyentuh' },
+                    { v1: 'travel', v2: 'traveled', v3: 'traveled', meaning: 'bepergian' },
+                    { v1: 'try', v2: 'tried', v3: 'tried', meaning: 'mencoba' },
+                    { v1: 'type', v2: 'typed', v3: 'typed', meaning: 'mengetik' },
+                    { v1: 'use', v2: 'used', v3: 'used', meaning: 'menggunakan' },
+                    { v1: 'visit', v2: 'visited', v3: 'visited', meaning: 'mengunjungi' },
+                    { v1: 'wait', v2: 'waited', v3: 'waited', meaning: 'menunggu' },
+                    { v1: 'walk', v2: 'walked', v3: 'walked', meaning: 'berjalan' },
+                    { v1: 'want', v2: 'wanted', v3: 'wanted', meaning: 'ingin' },
+                    { v1: 'wash', v2: 'washed', v3: 'washed', meaning: 'mencuci' },
+                    { v1: 'watch', v2: 'watched', v3: 'watched', meaning: 'menonton' },
+                    { v1: 'work', v2: 'worked', v3: 'worked', meaning: 'bekerja' },
+                    { v1: 'worry', v2: 'worried', v3: 'worried', meaning: 'khawatir' }
+                ],
+                irregularVerbs: [
+                    { v1: 'be', v2: 'was/were', v3: 'been', meaning: 'menjadi/ada' },
+                    { v1: 'become', v2: 'became', v3: 'become', meaning: 'menjadi' },
+                    { v1: 'begin', v2: 'began', v3: 'begun', meaning: 'memulai' },
+                    { v1: 'bite', v2: 'bit', v3: 'bitten', meaning: 'menggigit' },
+                    { v1: 'blow', v2: 'blew', v3: 'blown', meaning: 'meniup' },
+                    { v1: 'break', v2: 'broke', v3: 'broken', meaning: 'mematahkan' },
+                    { v1: 'bring', v2: 'brought', v3: 'brought', meaning: 'membawa' },
+                    { v1: 'build', v2: 'built', v3: 'built', meaning: 'membangun' },
+                    { v1: 'buy', v2: 'bought', v3: 'bought', meaning: 'membeli' },
+                    { v1: 'catch', v2: 'caught', v3: 'caught', meaning: 'menangkap' },
+                    { v1: 'choose', v2: 'chose', v3: 'chosen', meaning: 'memilih' },
+                    { v1: 'come', v2: 'came', v3: 'come', meaning: 'datang' },
+                    { v1: 'cost', v2: 'cost', v3: 'cost', meaning: 'berharga/biaya' },
+                    { v1: 'cut', v2: 'cut', v3: 'cut', meaning: 'memotong' },
+                    { v1: 'do', v2: 'did', v3: 'done', meaning: 'melakukan' },
+                    { v1: 'draw', v2: 'drew', v3: 'drawn', meaning: 'menggambar' },
+                    { v1: 'drink', v2: 'drank', v3: 'drunk', meaning: 'minum' },
+                    { v1: 'drive', v2: 'drove', v3: 'driven', meaning: 'mengemudi' },
+                    { v1: 'eat', v2: 'ate', v3: 'eaten', meaning: 'makan' },
+                    { v1: 'fall', v2: 'fell', v3: 'fallen', meaning: 'jatuh' },
+                    { v1: 'feed', v2: 'fed', v3: 'fed', meaning: 'memberi makan' },
+                    { v1: 'feel', v2: 'felt', v3: 'felt', meaning: 'merasa' },
+                    { v1: 'fight', v2: 'fought', v3: 'fought', meaning: 'berkelahi' },
+                    { v1: 'find', v2: 'found', v3: 'found', meaning: 'menemukan' },
+                    { v1: 'fly', v2: 'flew', v3: 'flown', meaning: 'terbang' },
+                    { v1: 'forget', v2: 'forgot', v3: 'forgotten', meaning: 'lupa' },
+                    { v1: 'forgive', v2: 'forgave', v3: 'forgiven', meaning: 'memaafkan' },
+                    { v1: 'freeze', v2: 'froze', v3: 'frozen', meaning: 'membeku' },
+                    { v1: 'get', v2: 'got', v3: 'gotten', meaning: 'mendapatkan' },
+                    { v1: 'give', v2: 'gave', v3: 'given', meaning: 'memberi' },
+                    { v1: 'go', v2: 'went', v3: 'gone', meaning: 'pergi' },
+                    { v1: 'grow', v2: 'grew', v3: 'grown', meaning: 'tumbuh' },
+                    { v1: 'hang', v2: 'hung', v3: 'hung', meaning: 'menggantung' },
+                    { v1: 'have', v2: 'had', v3: 'had', meaning: 'mempunyai' },
+                    { v1: 'hear', v2: 'heard', v3: 'heard', meaning: 'mendengar' },
+                    { v1: 'hide', v2: 'hid', v3: 'hidden', meaning: 'bersembunyi' },
+                    { v1: 'hit', v2: 'hit', v3: 'hit', meaning: 'memukul' },
+                    { v1: 'hold', v2: 'held', v3: 'held', meaning: 'memegang' },
+                    { v1: 'hurt', v2: 'hurt', v3: 'hurt', meaning: 'menyakiti' },
+                    { v1: 'keep', v2: 'kept', v3: 'kept', meaning: 'menyimpan/menjaga' },
+                    { v1: 'know', v2: 'knew', v3: 'known', meaning: 'mengetahui' },
+                    { v1: 'lead', v2: 'led', v3: 'led', meaning: 'memimpin' },
+                    { v1: 'leave', v2: 'left', v3: 'left', meaning: 'meninggalkan' },
+                    { v1: 'lend', v2: 'lent', v3: 'lent', meaning: 'meminjamkan' },
+                    { v1: 'let', v2: 'let', v3: 'let', meaning: 'membiarkan' },
+                    { v1: 'lose', v2: 'lost', v3: 'lost', meaning: 'kalah/hilang' },
+                    { v1: 'make', v2: 'made', v3: 'made', meaning: 'membuat' },
+                    { v1: 'mean', v2: 'meant', v3: 'meant', meaning: 'berarti' },
+                    { v1: 'meet', v2: 'met', v3: 'met', meaning: 'bertemu' },
+                    { v1: 'pay', v2: 'paid', v3: 'paid', meaning: 'membayar' },
+                    { v1: 'put', v2: 'put', v3: 'put', meaning: 'meletakkan' },
+                    { v1: 'read', v2: 'read', v3: 'read', meaning: 'membaca' },
+                    { v1: 'ride', v2: 'rode', v3: 'ridden', meaning: 'mengendarai' },
+                    { v1: 'ring', v2: 'rang', v3: 'rung', meaning: 'berdering' },
+                    { v1: 'run', v2: 'ran', v3: 'run', meaning: 'berlari' },
+                    { v1: 'say', v2: 'said', v3: 'said', meaning: 'mengatakan' },
+                    { v1: 'see', v2: 'saw', v3: 'seen', meaning: 'melihat' },
+                    { v1: 'sell', v2: 'sold', v3: 'sold', meaning: 'menjual' },
+                    { v1: 'send', v2: 'sent', v3: 'sent', meaning: 'mengirim' },
+                    { v1: 'set', v2: 'set', v3: 'set', meaning: 'mengatur' },
+                    { v1: 'shake', v2: 'shook', v3: 'shaken', meaning: 'mengguncang' },
+                    { v1: 'shine', v2: 'shone', v3: 'shone', meaning: 'bersinar' },
+                    { v1: 'shoot', v2: 'shot', v3: 'shot', meaning: 'menembak' },
+                    { v1: 'show', v2: 'showed', v3: 'shown', meaning: 'menunjukkan' },
+                    { v1: 'shut', v2: 'shut', v3: 'shut', meaning: 'menutup' },
+                    { v1: 'sing', v2: 'sang', v3: 'sung', meaning: 'bernyanyi' },
+                    { v1: 'sink', v2: 'sank', v3: 'sunk', meaning: 'tenggelam' },
+                    { v1: 'sit', v2: 'sat', v3: 'sat', meaning: 'duduk' },
+                    { v1: 'sleep', v2: 'slept', v3: 'slept', meaning: 'tidur' },
+                    { v1: 'speak', v2: 'spoke', v3: 'spoken', meaning: 'berbicara' },
+                    { v1: 'spend', v2: 'spent', v3: 'spent', meaning: 'menghabiskan' },
+                    { v1: 'stand', v2: 'stood', v3: 'stood', meaning: 'berdiri' },
+                    { v1: 'steal', v2: 'stole', v3: 'stolen', meaning: 'mencuri' },
+                    { v1: 'sweep', v2: 'swept', v3: 'swept', meaning: 'menyapu' },
+                    { v1: 'swim', v2: 'swam', v3: 'swum', meaning: 'berenang' },
+                    { v1: 'take', v2: 'took', v3: 'taken', meaning: 'mengambil' },
+                    { v1: 'teach', v2: 'taught', v3: 'taught', meaning: 'mengajar' },
+                    { v1: 'tear', v2: 'tore', v3: 'torn', meaning: 'merobek' },
+                    { v1: 'tell', v2: 'told', v3: 'told', meaning: 'menceritakan' },
+                    { v1: 'think', v2: 'thought', v3: 'thought', meaning: 'berpikir' },
+                    { v1: 'throw', v2: 'threw', v3: 'thrown', meaning: 'melempar' },
+                    { v1: 'understand', v2: 'understood', v3: 'understood', meaning: 'mengerti' },
+                    { v1: 'wake', v2: 'woke', v3: 'woken', meaning: 'bangun' },
+                    { v1: 'wear', v2: 'wore', v3: 'worn', meaning: 'memakai' },
+                    { v1: 'win', v2: 'won', v3: 'won', meaning: 'menang' },
+                    { v1: 'write', v2: 'wrote', v3: 'written', meaning: 'menulis' }
+                ]
+            }
+        },
+        computed: {
+            pageTitle() { const map = { 'dashboard': 'Dashboard', 'absensi': 'Absensi Siswa', 'vocabulary': 'Vocabulary Tracker', 'regular-verb': 'Regular Verb List', 'irregular-verb': 'Irregular Verb List', 'tugas': 'Nilai Tugas', 'ulangan': 'Nilai Ulangan', 'psas': 'Nilai PSAS', 'psat': 'Nilai PSAT', 'pengaturan': 'Pengaturan' }; return map[this.currentView] || 'Aplikasi Guru'; },
+            currentDate() { return new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); },
+            uniqueClasses() { return [...new Set(this.students.map(s => s.class))].sort(); },
+            filteredStudents() { if (this.selectedClass === 'all') return this.students; return this.students.filter(s => s.class === this.selectedClass); },
+            currentMonthName() { return new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' }); },
+            calendarDays() {
+                const dates = [];
+                const curr = new Date();
+                const day = curr.getDay(); 
+                const first = curr.getDate() - day + 1; 
+                const monday = new Date(curr);
+                monday.setDate(first); 
+
+                for(let i=0; i<6; i++) {
+                    const d = new Date(monday);
+                    d.setDate(monday.getDate() + i);
+                    // logic inside loop was empty in previous ref, restoring default calendar logic below
+                }
+                const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const daysInMonth = new Date(year, month + 1, 0).getDate(); const firstDay = new Date(year, month, 1).getDay(); let d = []; for(let i=0; i<firstDay; i++) d.push({ date: `pad-${i}`, day: '' }); for(let i=1; i<=daysInMonth; i++) d.push({ date: `${year}-${month+1}-${i}`, day: i, isToday: i === now.getDate(), isRedDate: new Date(year,month,i).getDay()===0 || this.isRedDate(i) }); return d; 
+            },
+            redDates() { return [{ day: 25, desc: 'Hari Guru', date: '2023-11-25' }]; },
+            currentDaySchedule() { return this.schedules.filter(s => s.day === this.selectedScheduleDay).sort((a,b) => a.time.localeCompare(b.time)); },
+            stats() { 
+                const total = this.filteredStudents.length; 
+                const male = this.filteredStudents.filter(s => s.gender === 'L').length; 
+                const female = this.filteredStudents.filter(s => s.gender === 'P').length; 
+                let totalPercent = 0; 
+                this.filteredStudents.forEach(s => { totalPercent += this.getVocabStats(s.id).percent; }); 
+                const avgVocab = total > 0 ? (totalPercent / total) : 0; 
+                return { 
+                    total, male, female, avgVocab, 
+                    attendanceRate: this.dashboardStats.attendanceRate, 
+                    totalAlpha: this.dashboardStats.totalAlpha, 
+                    topAlphaStudents: this.dashboardStats.topAlphaStudents 
+                }; 
+            },
+            
+            // VERB COMPUTED
+            currentVerbs() {
+                let list = [];
+                if (this.currentView === 'regular-verb') list = this.regularVerbs;
+                else if (this.currentView === 'irregular-verb') list = this.irregularVerbs;
+                
+                if (this.verbSearch) {
+                    const q = this.verbSearch.toLowerCase();
+                    return list.filter(v => 
+                        v.v1.toLowerCase().includes(q) || 
+                        v.v2.toLowerCase().includes(q) || 
+                        v.v3.toLowerCase().includes(q) || 
+                        v.meaning.toLowerCase().includes(q)
+                    );
+                }
+                return list;
+            }
+        },
+        watch: {
+            currentView(newVal) { this.mobileMenuOpen = false; if (newVal === 'dashboard') this.fetchDashboardStats(); else if (newVal === 'absensi') this.fetchAttendanceForDate(this.attendanceDate); },
+            attendanceDate(newDate) { if (this.currentView === 'absensi') this.fetchAttendanceForDate(newDate); },
+            selectedClass() { if (this.currentView === 'dashboard') this.fetchDashboardStats(); }
+        },
+        mounted() { this.initAuth(); document.addEventListener('click', this.closeNotifOnClickOutside); },
+        beforeUnmount() { document.removeEventListener('click', this.closeNotifOnClickOutside); },
+        methods: {
+            navigate(view) { this.currentView = view; },
+            handleGlobalClick(e) { },
+            closeNotifOnClickOutside(e) { const container = document.getElementById('notif-container'); if (container && !container.contains(e.target)) this.showNotifs = false; },
+            handleAvatarUpload(event) { const file = event.target.files[0]; if (!file) return; if (file.size > 500 * 1024) { this.showAlert("File Terlalu Besar", "Maksimal ukuran file adalah 500KB.", "error"); return; } const reader = new FileReader(); reader.onload = (e) => { this.profile.avatar = e.target.result; this.addNotification("Avatar berhasil diunggah. Klik Simpan."); }; reader.readAsDataURL(file); },
+            showAlert(title, message, type='info') { return new Promise(r => { this.modal = { show: true, title, message, type, isConfirm: false, resolve: r, confirmText: 'OKE' }; }); },
+            showConfirm(title, message) { return new Promise(r => { this.modal = { show: true, title, message, type: 'warning', isConfirm: true, resolve: r, confirmText: 'YA' }; }); },
+            closeModal(result) { this.modal.show = false; if(this.modal.resolve) this.modal.resolve(result); },
+            addNotification(text) { this.notifications.unshift({ text, time: new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) }); },
+            async initAuth() { try { await signInAnonymously(auth); } catch(e) { console.error("Auth failed", e); } onAuthStateChanged(auth, async (user) => { this.user = user; if (user) { try { await Promise.all([this.fetchStudents(), this.fetchVocab(), this.fetchGrades(), this.fetchSchedules(), this.fetchProfile()]); if (this.currentView === 'dashboard') await this.fetchDashboardStats(); } catch(e) {} this.loading = false; } else { this.loading = false; } }); },
+            async fetchVocab() { onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'vocabulary', 'main'), s => { if(s.exists()) this.vocabData = s.data(); }); },
+            openVocabModal(student) { this.selectedVocabStudent = student; this.showVocabModal = true; },
+            cycleVocabItem(sid, n) { const sData = this.vocabData[sid] || {}; const current = sData[n]; let next; if (!current) next = 'BL'; else if (current === 'BL') next = 'L'; else next = null; if(!this.vocabData[sid]) this.vocabData[sid] = {}; if(next) this.vocabData[sid][n] = next; else delete this.vocabData[sid][n]; },
+            getVocabClass(sid, n) { const s = this.vocabData[sid]?.[n]; if (s === 'L') return 'status-l'; if (s === 'BL') return 'status-bl'; return ''; },
+            getVocabStats(sid) { const sData = this.vocabData[sid] || {}; let l = 0, bl = 0; Object.values(sData).forEach(v => { if(v==='L') l++; else if(v==='BL') bl++; }); return { l, bl, t: 100 - l - bl, percent: l }; },
+            async saveVocabData() { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'vocabulary', 'main'), this.vocabData); this.addNotification(`Vocab ${this.selectedVocabStudent.name} tersimpan.`); this.showVocabModal = false; },
+            openEditSchedule(slot) { this.editingScheduleSlot = { ...slot, original: slot }; this.showEditScheduleModal = true; },
+            async saveScheduleEdit() { const index = this.schedules.indexOf(this.editingScheduleSlot.original); if (index !== -1) { this.schedules[index].subject = this.editingScheduleSlot.subject; this.schedules[index].time = this.editingScheduleSlot.time; this.schedules[index].class = this.editingScheduleSlot.class; await this.saveSchedulesToDB(); this.addNotification("Jadwal berhasil diperbarui."); this.showEditScheduleModal = false; } },
+            async saveSchedulesToDB() { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'schedules', 'main'), { list: this.schedules }); },
+            addScheduleSlot() { this.schedules.push({ day: this.selectedScheduleDay, time: '08:00 - 09:00', class: 'X', subject: '...' }); this.saveSchedulesToDB(); this.addNotification("Jadwal baru ditambahkan."); },
+            async deleteSchedule(slot) { if(await this.showConfirm("Hapus?", "Jadwal akan dihapus.")) { this.schedules = this.schedules.filter(s => s !== slot); await this.saveSchedulesToDB(); this.addNotification("Jadwal dihapus."); } },
+            getAttendance(sid) { return this.attendanceData[sid] || 'H'; },
+            setAttendance(sid, st) { this.attendanceData[sid] = st; },
+            countAttendance(st) { return this.filteredStudents.filter(s => this.getAttendance(s.id) === st).length; },
+            async saveAttendance() { const dataToSave = { ...this.attendanceData }; this.filteredStudents.forEach(s => { if(!dataToSave[s.id]) dataToSave[s.id] = 'H'; }); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', this.attendanceDate), dataToSave); this.attendanceData = dataToSave; this.showAlert("Sukses", "Data absensi tersimpan.", 'success'); this.addNotification("Absensi disimpan."); },
+            async fetchAttendanceForDate(d) { try { const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', d)); this.attendanceData = snap.exists() ? snap.data() : {}; } catch(e){} },
+            async fetchStudents() { onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'students')), s => { this.students = s.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>a.class.localeCompare(b.class)||a.name.localeCompare(b.name)); }); },
+            
+            async addNewStudent() { 
+                if(this.newStudent.name) { 
+                    await setDoc(doc(collection(db, 'artifacts', appId, 'public', 'data', 'students')), {...this.newStudent}); 
+                    this.showAddStudentModal=false; 
+                    this.addNotification(`Siswa ${this.newStudent.name} ditambahkan.`);
+                    this.newStudent={nipd: '', nisn: '', name: '', gender: 'L', class: ''}; 
+                } 
+            },
+            async deleteStudent(id) { if(await this.showConfirm("Hapus?","")) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', id)); this.addNotification("Siswa dihapus."); } },
+            async deleteSelectedStudents() { if(await this.showConfirm("Hapus Masal?","")) { const b=writeBatch(db); this.selectedStudentsForDeletion.forEach(id=>b.delete(doc(db, 'artifacts', appId, 'public', 'data', 'students', id))); await b.commit(); this.selectedStudentsForDeletion=[]; this.addNotification("Siswa terpilih dihapus."); } },
+            
+            async fetchGrades() { ['tugas','ulangan','psas','psat'].forEach(async t => { const s = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'grades', t)); this.gradesData[t] = s.exists() ? s.data() : { columns: [{id:'c1',name:'Nilai 1'}], scores: {} }; }); },
+            getGradeColumns() { if(!this.gradesData[this.currentView]) return []; return this.gradesData[this.currentView].columns || []; },
+            getGrade(sid, cid) { if(!this.gradesData[this.currentView] || !this.gradesData[this.currentView].scores) return 0; const scores = this.gradesData[this.currentView].scores[sid]; return scores ? (scores[cid] || 0) : 0; },
+            updateGrade(sid, cid, v) { if(!this.gradesData[this.currentView]) this.gradesData[this.currentView] = { columns: [], scores: {} }; const d = this.gradesData[this.currentView]; if(!d.scores) d.scores={}; if(!d.scores[sid]) d.scores[sid]={}; d.scores[sid][cid] = parseInt(v) || 0; },
+            addColumn() { if(!this.gradesData[this.currentView]) this.gradesData[this.currentView] = { columns: [], scores: {} }; if(!this.gradesData[this.currentView].columns) this.gradesData[this.currentView].columns = []; this.gradesData[this.currentView].columns.push({id:'c'+Date.now(), name:'Baru'}); this.addNotification("Kolom ditambahkan."); },
+            async saveGrades() { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'grades', this.currentView), this.gradesData[this.currentView]); this.addNotification("Nilai disimpan."); },
+            
+            renameColumn(id, old) { this.editingColumn = { id: id, name: old }; this.showRenameColumnModal = true; },
+            async saveColumnRename() { if(!this.editingColumn.name) return; const col = this.gradesData[this.currentView].columns.find(c => c.id === this.editingColumn.id); if(col) { col.name = this.editingColumn.name; this.addNotification("Nama kolom diubah. Jangan lupa Simpan."); this.showRenameColumnModal = false; } },
+            async deleteColumn(id) { if(await this.showConfirm("Hapus Kolom?","")) { this.gradesData[this.currentView].columns = this.gradesData[this.currentView].columns.filter(c=>c.id!==id); this.addNotification("Kolom dihapus."); } },
+            
+            async fetchSchedules() { try{const s=await getDoc(doc(db,'artifacts',appId,'public','data','schedules', 'main')); if(s.exists()) this.schedules=s.data().list||[]; }catch(e){} },
+            async fetchProfile() { try{const s=await getDoc(doc(db,'artifacts',appId,'public','data','settings', 'profile')); if(s.exists()) this.profile=s.data(); }catch(e){} },
+            async saveProfile() { await setDoc(doc(db,'artifacts',appId,'public','data','settings', 'profile'), this.profile); this.showAlert("Disimpan","Profil OK",'success'); this.addNotification("Profil disimpan."); },
+            async resetActivities() { if(await this.showConfirm("RESET DATABASE?", "Semua data nilai, absensi, dan vocab akan dihapus. Data siswa TETAP ADA.")) { this.loading = true; try { const batch = writeBatch(db); batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'vocabulary', 'main'), {}); ['tugas', 'ulangan', 'psas', 'psat'].forEach(t => batch.set(doc(db, 'artifacts', appId, 'public', 'data', 'grades', t), {})); const attCol = collection(db, 'artifacts', appId, 'public', 'data', 'attendance'); const attSnap = await getDocs(attCol); attSnap.forEach(d => batch.delete(d.ref)); await batch.commit(); this.addNotification("Database berhasil di-reset."); setTimeout(() => location.reload(), 1000); } catch(e) { console.error(e); this.showAlert("Error", "Gagal reset: " + e.message, "error"); this.loading = false; } } },
+            
+            // --- PRINT RECAP FUNCTION ---
+            async printRecap() {
+                this.loading = true;
+                try {
+                    // Fetch ALL attendance docs
+                    const attCol = collection(db, 'artifacts', appId, 'public', 'data', 'attendance');
+                    const attSnap = await getDocs(attCol);
+                    
+                    const reportData = {}; // studentId -> {H:0, I:0, S:0, A:0}
+                    let totalDays = 0;
+
+                    attSnap.forEach(doc => {
+                        totalDays++;
+                        const data = doc.data();
+                        Object.entries(data).forEach(([sid, status]) => {
+                            if(!reportData[sid]) reportData[sid] = {H:0, I:0, S:0, A:0};
+                            if(['H','I','S','A'].includes(status)) reportData[sid][status]++;
+                        });
+                    });
+
+                    // Build HTML
+                    let rows = '';
+                    this.filteredStudents.forEach((s, idx) => {
+                        const stats = reportData[s.id] || {H:0, I:0, S:0, A:0};
+                        const total = stats.H + stats.I + stats.S + stats.A;
+                        const presentPct = total > 0 ? Math.round(((stats.H + stats.I) / total) * 100) : 0;
+                        rows += `
+                            <tr>
+                                <td style="text-align:center">${idx + 1}</td>
+                                <td>${s.nisn || '-'}</td>
+                                <td>${s.name}</td>
+                                <td style="text-align:center">${s.gender}</td>
+                                <td style="text-align:center">${s.class}</td>
+                                <td style="text-align:center">${stats.H}</td>
+                                <td style="text-align:center">${stats.I}</td>
+                                <td style="text-align:center">${stats.S}</td>
+                                <td style="text-align:center">${stats.A}</td>
+                                <td style="text-align:center">${presentPct}%</td>
+                            </tr>
+                        `;
+                    });
+
+                    const printContent = `
+                        <html>
+                        <head>
+                            <title>Rekap Kehadiran - EduAdmin</title>
+                            <style>
+                                body { font-family: sans-serif; padding: 20px; }
+                                h2, h4 { text-align: center; margin: 5px 0; }
+                                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                                th, td { border: 1px solid #000; padding: 5px 8px; }
+                                th { background-color: #f0f0f0; }
+                                .footer { margin-top: 40px; display: flex; justify-content: flex-end; }
+                                .sign { text-align: center; margin-right: 50px; }
+                            </style>
+                        </head>
+                        <body>
+                            <h2>REKAPITULASI KEHADIRAN SISWA</h2>
+                            <h4>MATA PELAJARAN: BAHASA INGGRIS</h4>
+                            <h4>KELAS: ${this.selectedClass === 'all' ? 'SEMUA KELAS' : this.selectedClass}</h4>
+                            <hr style="margin-top:15px; border-top: 2px solid #000;">
+                            
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>NISN</th>
+                                        <th>Nama Siswa</th>
+                                        <th>L/P</th>
+                                        <th>Kelas</th>
+                                        <th>H</th>
+                                        <th>I</th>
+                                        <th>S</th>
+                                        <th>A</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rows}
+                                </tbody>
+                            </table>
+
+                            <div class="footer">
+                                <div class="sign">
+                                    <p>Mengetahui,</p>
+                                    <p>Guru Mata Pelajaran</p>
+                                    <br><br><br>
+                                    <p style="font-weight:bold; text-decoration: underline;">${this.profile.name}</p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                    `;
+
+                    const win = window.open('', '', 'width=900,height=700');
+                    win.document.write(printContent);
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { win.print(); win.close(); }, 500);
+
+                } catch (e) {
+                    this.showAlert("Error", "Gagal memuat data rekap: " + e.message, "error");
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            // --- UPDATED DASHBOARD LOGIC (ALL TIME ALPHA + FIXED AVG VOCAB) ---
+            getWeekDates() {
+                const dates = [];
+                const curr = new Date();
+                const day = curr.getDay(); 
+                const first = curr.getDate() - day + 1; 
+                const monday = new Date(curr);
+                monday.setDate(first); 
+                for(let i=0; i<6; i++) {
+                    const d = new Date(monday);
+                    d.setDate(monday.getDate() + i);
+                    dates.push(d.toISOString().slice(0,10));
+                }
+                return dates;
+            },
+            async fetchDashboardStats() {
+                this.loading = true;
+                const attRef = collection(db, 'artifacts', appId, 'public', 'data', 'attendance');
+                const attSnaps = await getDocs(attRef);
+                
+                const alphaCounts = {};
+                const weekDates = this.getWeekDates();
+                const dataH = [0,0,0,0,0,0];
+                const dataA = [0,0,0,0,0,0];
+                let totalWeekEntries = 0;
+                let totalWeekHadir = 0;
+
+                attSnaps.forEach(doc => {
+                    const date = doc.id;
+                    const data = doc.data();
+                    const isThisWeek = weekDates.includes(date);
+                    const dayIndex = weekDates.indexOf(date);
+
+                    Object.entries(data).forEach(([sid, status]) => {
+                        const student = this.students.find(s => s.id === sid);
+                        if (student && (this.selectedClass === 'all' || student.class === this.selectedClass)) {
+                            // All Time Alpha
+                            if (status === 'A') alphaCounts[sid] = (alphaCounts[sid] || 0) + 1;
+
+                            // Weekly Chart
+                            if (isThisWeek && dayIndex !== -1) {
+                                totalWeekEntries++;
+                                if (status === 'H') { dataH[dayIndex]++; totalWeekHadir++; }
+                                else if (status === 'A') { dataA[dayIndex]++; }
+                            }
+                        }
+                    });
+                });
+
+                const topAlpha = Object.entries(alphaCounts).map(([sid, c]) => ({
+                    name: this.students.find(x => x.id === sid)?.name || '?',
+                    class: this.students.find(x => x.id === sid)?.class || '-',
+                    count: c
+                })).sort((a, b) => b.count - a.count).slice(0, 5);
+
+                this.dashboardStats = {
+                    attendanceRate: totalWeekEntries > 0 ? Math.round((totalWeekHadir / totalWeekEntries) * 100) : 0,
+                    totalAlpha: Object.values(alphaCounts).reduce((a, b) => a + b, 0),
+                    topAlphaStudents: topAlpha,
+                    chartHadir: dataH,
+                    chartAlpha: dataA,
+                    chartLabels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+                };
+
+                this.$nextTick(() => { this.initCharts(); this.loading = false; });
+            },
+            initCharts() {
+                if(this.barChartInstance) this.barChartInstance.destroy();
+                const ctx = document.getElementById('attendanceChart');
+                if(ctx) {
+                    this.barChartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: { labels: this.dashboardStats.chartLabels, datasets: [{label:'Hadir',data:this.dashboardStats.chartHadir,backgroundColor:'#d4f049',borderRadius:4},{label:'Alpha',data:this.dashboardStats.chartAlpha,backgroundColor:'#1e1e2d',borderRadius:4}] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+                    });
+                }
+            },
+            toggleAllSelection(e) { this.selectedStudentsForDeletion = e.target.checked ? this.students.map(s=>s.id) : []; },
+            isRedDate(d) { return this.redDates.some(r=>r.day===d); },
+            processBulkImport() {
+                if(!this.bulkImportText) return;
+                const lines = this.bulkImportText.trim().split('\n');
+                const b = writeBatch(db); let count = 0;
+                lines.forEach(l => { const c = l.split(/\||\t|,/); if(c.length >= 4) { const name = c[3]?.trim(); if(name) { b.set(doc(collection(db,'artifacts',appId,'public','data','students')), { nisn: c[1]?.trim()||'', name, gender: c[4]?.trim()||'L', class: c[5]?.trim()||'X' }); count++; } } });
+                b.commit().then(()=>{ this.showAlert("Import OK", `Berhasil ${count} siswa.`); this.showBulkImportModal=false; this.addNotification(`Import ${count} berhasil.`); });
+            },
+            
+            // --- TEXT TO SPEECH ---
+            speak(text) {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US'; // Set to English US
+                    // Optional: Try to select a specific voice if available
+                    const voices = window.speechSynthesis.getVoices();
+                    const englishVoice = voices.find(voice => voice.lang.includes('en-US'));
+                    if (englishVoice) {
+                        utterance.voice = englishVoice;
+                    }
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    this.showAlert("Error", "Browser Anda tidak mendukung fitur suara.", "error");
+                }
+            }
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>
